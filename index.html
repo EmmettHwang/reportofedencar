@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>업무용 승용차 운행기록부</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="css/style.css" />
+  <!-- SheetJS for Excel export (local) -->
+  <script src="js/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<!-- ===== TOP HEADER ===== -->
+<header class="top-header">
+  <div class="header-inner">
+    <span class="header-icon">🚗</span>
+    <h1>업무용 승용차 운행기록부</h1>
+    <span class="header-sub">차량 운행일지 관리 시스템</span>
+  </div>
+</header>
+
+<!-- ===== NAV TABS ===== -->
+<nav class="main-nav">
+  <button class="nav-btn active" data-tab="tab-vehicle">🚗 차량 관리</button>
+  <button class="nav-btn" data-tab="tab-client">🏢 거래처 관리</button>
+  <button class="nav-btn" data-tab="tab-settings">⚙️ 운행 설정</button>
+  <button class="nav-btn" data-tab="tab-logbook">📅 운행일지 작성</button>
+  <button class="nav-btn" data-tab="tab-export">📊 엑셀 출력</button>
+</nav>
+
+<!-- ===== MAIN CONTENT ===== -->
+<main class="main-content">
+
+  <!-- ==============================
+       TAB 1: 차량 관리
+  ============================== -->
+  <section id="tab-vehicle" class="tab-section active">
+    <div class="section-header">
+      <h2>🚗 차량 관리</h2>
+      <button class="btn btn-primary" id="btn-add-vehicle">+ 차량 등록</button>
+    </div>
+
+    <!-- 차량 등록/수정 폼 -->
+    <div class="card form-card" id="vehicle-form-card" style="display:none;">
+      <h3 id="vehicle-form-title">차량 등록</h3>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>차량등록번호 <span class="required">*</span></label>
+          <input type="text" id="v-regno" placeholder="예: 159러1358" maxlength="15" />
+        </div>
+        <div class="form-group">
+          <label>차종 <span class="required">*</span></label>
+          <input type="text" id="v-model" placeholder="예: 현대 소나타" maxlength="30" />
+        </div>
+        <div class="form-group">
+          <label>연식</label>
+          <input type="number" id="v-year" placeholder="예: 2022" min="2000" max="2030" />
+        </div>
+        <div class="form-group">
+          <label>현재 누적주행거리 (km) <span class="required">*</span></label>
+          <input type="number" id="v-odometer" placeholder="예: 34576" min="0" />
+        </div>
+        <div class="form-group">
+          <label>메모</label>
+          <input type="text" id="v-memo" placeholder="기타 사항" maxlength="50" />
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" id="btn-save-vehicle">💾 저장</button>
+        <button class="btn btn-cancel" id="btn-cancel-vehicle">취소</button>
+      </div>
+    </div>
+
+    <!-- 차량 목록 -->
+    <div class="card">
+      <table class="data-table" id="vehicle-table">
+        <thead>
+          <tr>
+            <th>번호</th>
+            <th>등록번호</th>
+            <th>차종</th>
+            <th>연식</th>
+            <th>누적주행(km)</th>
+            <th>메모</th>
+            <th>관리</th>
+          </tr>
+        </thead>
+        <tbody id="vehicle-tbody">
+          <tr><td colspan="7" class="empty-row">등록된 차량이 없습니다.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ==============================
+       TAB 2: 거래처 관리
+  ============================== -->
+  <section id="tab-client" class="tab-section">
+    <div class="section-header">
+      <h2>🏢 거래처 관리</h2>
+      <button class="btn btn-primary" id="btn-add-client">+ 거래처 등록</button>
+    </div>
+
+    <!-- 거래처 등록/수정 폼 -->
+    <div class="card form-card" id="client-form-card" style="display:none;">
+      <h3 id="client-form-title">거래처 등록</h3>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>거래처명 <span class="required">*</span></label>
+          <input type="text" id="c-name" placeholder="예: 청라감자탕" maxlength="30" />
+        </div>
+        <div class="form-group">
+          <label>왕복거리 (km) <span class="required">*</span></label>
+          <input type="number" id="c-distance" placeholder="예: 25" min="1" max="500" />
+        </div>
+        <div class="form-group">
+          <label>거리 오차범위 (± km)</label>
+          <input type="number" id="c-variance" placeholder="예: 3" min="0" max="50" value="0" />
+          <small class="hint">실제 거리에 ±랜덤 오차를 적용합니다</small>
+        </div>
+        <div class="form-group">
+          <label>월 방문 횟수 <span class="required">*</span></label>
+          <input type="number" id="c-visits" placeholder="예: 4" min="1" max="22" />
+          <small class="hint">월 최대 근무일(약 22일) 이내로 설정</small>
+        </div>
+        <div class="form-group">
+          <label>메모</label>
+          <input type="text" id="c-memo" placeholder="기타 사항" maxlength="50" />
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" id="btn-save-client">💾 저장</button>
+        <button class="btn btn-cancel" id="btn-cancel-client">취소</button>
+      </div>
+    </div>
+
+    <!-- 거래처 목록 -->
+    <div class="card">
+      <table class="data-table" id="client-table">
+        <thead>
+          <tr>
+            <th>번호</th>
+            <th>거래처명</th>
+            <th>왕복거리(km)</th>
+            <th>오차범위(±km)</th>
+            <th>월 방문횟수</th>
+            <th>메모</th>
+            <th>관리</th>
+          </tr>
+        </thead>
+        <tbody id="client-tbody">
+          <tr><td colspan="7" class="empty-row">등록된 거래처가 없습니다.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ==============================
+       TAB 3: 운행 설정
+  ============================== -->
+  <section id="tab-settings" class="tab-section">
+    <div class="section-header">
+      <h2>⚙️ 운행 설정</h2>
+    </div>
+
+    <div class="settings-grid">
+      <!-- 출퇴근 설정 -->
+      <div class="card settings-card">
+        <h3>🏠 출퇴근 설정</h3>
+        <div class="form-group">
+          <label>출퇴근 왕복거리 (km)</label>
+          <input type="number" id="s-commute-dist" placeholder="예: 22" min="1" max="200" />
+          <small class="hint">집→회사→집 왕복 거리</small>
+        </div>
+        <div class="form-group">
+          <label>거리 오차범위 (± km)</label>
+          <input type="number" id="s-commute-var" placeholder="예: 2" min="0" max="30" value="0" />
+        </div>
+        <div class="form-group">
+          <label>주 출퇴근 횟수</label>
+          <select id="s-commute-days">
+            <option value="1">주 1회</option>
+            <option value="2" selected>주 2회</option>
+            <option value="3">주 3회</option>
+            <option value="4">주 4회</option>
+            <option value="5">주 5회</option>
+          </select>
+          <small class="hint">출퇴근 기록을 넣을 요일 횟수</small>
+        </div>
+      </div>
+
+      <!-- 연간 목표 설정 -->
+      <div class="card settings-card">
+        <h3>📏 연간 주행 목표</h3>
+        <div class="form-group">
+          <label>연간 목표 주행거리 (km)</label>
+          <input type="number" id="s-annual-km" placeholder="예: 7000" min="1000" max="50000" value="7000" />
+          <small class="hint">업무용+출퇴근 합산 연간 목표</small>
+        </div>
+        <div class="form-group">
+          <label>기준 차량</label>
+          <select id="s-vehicle-select">
+            <option value="">-- 차량을 선택하세요 --</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 운행일지 생성 옵션 -->
+      <div class="card settings-card">
+        <h3>🎲 자동생성 옵션</h3>
+        <div class="form-group">
+          <label>랜덤 시드 고정</label>
+          <div class="toggle-wrap">
+            <input type="checkbox" id="s-fix-seed" />
+            <label for="s-fix-seed" class="toggle-label">같은 달 재생성 시 동일 패턴 유지</label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>출퇴근 요일 배치</label>
+          <select id="s-commute-spread">
+            <option value="random">랜덤 배치</option>
+            <option value="early">주 초반 (월,화 우선)</option>
+            <option value="late">주 후반 (목,금 우선)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>토요일 운행 포함</label>
+          <div class="toggle-wrap">
+            <input type="checkbox" id="s-include-sat" />
+            <label for="s-include-sat" class="toggle-label">토요일도 운행 가능</label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-actions center-actions">
+      <button class="btn btn-primary btn-lg" id="btn-save-settings">💾 설정 저장</button>
+    </div>
+
+    <!-- 현재 설정 요약 -->
+    <div class="card" id="settings-summary" style="margin-top:20px;">
+      <h3>📋 현재 설정 요약</h3>
+      <div id="settings-summary-content" class="summary-grid">
+        <p class="empty-row">설정을 입력하고 저장해주세요.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==============================
+       TAB 4: 운행일지 작성
+  ============================== -->
+  <section id="tab-logbook" class="tab-section">
+    <div class="section-header">
+      <h2>📅 운행일지 작성</h2>
+    </div>
+
+    <!-- 월 선택 및 생성 컨트롤 -->
+    <div class="card control-card">
+      <div class="control-row">
+        <div class="form-group inline">
+          <label>차량 선택</label>
+          <select id="lb-vehicle-select">
+            <option value="">-- 차량 선택 --</option>
+          </select>
+        </div>
+        <div class="form-group inline">
+          <label>년도</label>
+          <select id="lb-year"></select>
+        </div>
+        <div class="form-group inline">
+          <label>월</label>
+          <select id="lb-month">
+            <option value="1">1월</option><option value="2">2월</option>
+            <option value="3">3월</option><option value="4">4월</option>
+            <option value="5">5월</option><option value="6">6월</option>
+            <option value="7">7월</option><option value="8">8월</option>
+            <option value="9">9월</option><option value="10">10월</option>
+            <option value="11">11월</option><option value="12">12월</option>
+          </select>
+        </div>
+        <div class="form-group inline">
+          <label>시작 누적거리 (km)</label>
+          <input type="number" id="lb-start-odo" placeholder="예: 34576" min="0" />
+        </div>
+        <button class="btn btn-success btn-lg" id="btn-generate-log">🎲 자동 생성</button>
+        <button class="btn btn-secondary" id="btn-clear-log">🗑️ 초기화</button>
+      </div>
+      <div class="generate-info" id="generate-info" style="display:none;">
+        <span id="generate-info-text"></span>
+      </div>
+    </div>
+
+    <!-- 운행일지 테이블 -->
+    <div class="card table-card">
+      <div class="table-scroll">
+        <table class="logbook-table" id="logbook-table">
+          <thead>
+            <tr class="header-row-1">
+              <th rowspan="2">일자</th>
+              <th rowspan="2">(요일)</th>
+              <th colspan="3">운 행 내 역</th>
+              <th colspan="2">사용 거리</th>
+              <th rowspan="2">비 고</th>
+            </tr>
+            <tr class="header-row-2">
+              <th>주행전(km)</th>
+              <th>주행후(km)</th>
+              <th>주행거리(km)</th>
+              <th>출퇴근(km)</th>
+              <th>업무용(km)</th>
+            </tr>
+          </thead>
+          <tbody id="logbook-tbody">
+            <tr><td colspan="8" class="empty-row">먼저 차량과 월을 선택한 후 자동 생성을 눌러주세요.</td></tr>
+          </tbody>
+          <tfoot id="logbook-tfoot"></tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- 저장 버튼 -->
+    <div class="form-actions center-actions" id="logbook-save-area" style="display:none;">
+      <button class="btn btn-primary btn-lg" id="btn-save-log">💾 일지 저장 (DB)</button>
+      <span class="save-hint">저장된 일지는 엑셀 출력 탭에서 다운로드할 수 있습니다</span>
+    </div>
+  </section>
+
+  <!-- ==============================
+       TAB 5: 엑셀 출력
+  ============================== -->
+  <section id="tab-export" class="tab-section">
+    <div class="section-header">
+      <h2>📊 엑셀 출력</h2>
+    </div>
+
+    <!-- 저장된 일지 목록 -->
+    <div class="card">
+      <h3>📂 저장된 운행일지 목록</h3>
+      <table class="data-table" id="saved-log-table">
+        <thead>
+          <tr>
+            <th>차량번호</th>
+            <th>기간</th>
+            <th>총주행(km)</th>
+            <th>출퇴근(km)</th>
+            <th>업무용(km)</th>
+            <th>작성일시</th>
+            <th>관리</th>
+          </tr>
+        </thead>
+        <tbody id="saved-log-tbody">
+          <tr><td colspan="7" class="empty-row">저장된 운행일지가 없습니다.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 일괄 출력 -->
+    <div class="card">
+      <h3>📥 일괄 엑셀 다운로드</h3>
+      <div class="export-options">
+        <div class="form-group inline">
+          <label>차량 선택</label>
+          <select id="exp-vehicle">
+            <option value="all">전체 차량</option>
+          </select>
+        </div>
+        <div class="form-group inline">
+          <label>년도</label>
+          <select id="exp-year"></select>
+        </div>
+        <button class="btn btn-excel btn-lg" id="btn-export-all">
+          📥 엑셀 다운로드
+        </button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ===== MODAL ===== -->
+<div class="modal-overlay" id="modal-overlay" style="display:none;">
+  <div class="modal-box" id="modal-box">
+    <div class="modal-header">
+      <h3 id="modal-title">확인</h3>
+      <button class="modal-close" id="modal-close">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" id="modal-confirm">확인</button>
+      <button class="btn btn-cancel" id="modal-cancel" style="display:none;">취소</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TOAST ===== -->
+<div class="toast" id="toast"></div>
+
+<!-- JS -->
+<script src="js/db.js"></script>
+<script src="js/vehicle.js"></script>
+<script src="js/client.js"></script>
+<script src="js/settings.js"></script>
+<script src="js/logbook.js"></script>
+<script src="js/export.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
