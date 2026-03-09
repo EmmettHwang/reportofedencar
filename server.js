@@ -1,18 +1,37 @@
 /* =====================================================
    server.js - Express + MariaDB API 서버
-   (주)이든푸드 차량 운행기록부 v2.0
+   (주)이든푸드 인트라넷 + 차량 운행기록부 v3.0
    ===================================================== */
 require('dotenv').config();
-const express = require('express');
-const mysql   = require('mysql2/promise');
-const path    = require('path');
-const fs      = require('fs');
+const express  = require('express');
+const mysql    = require('mysql2/promise');
+const path     = require('path');
+const fs       = require('fs');
+const bcrypt   = require('bcryptjs');
+const jwt      = require('jsonwebtoken');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
+const JWT_SECRET = process.env.JWT_SECRET || 'edenfood-intranet-secret-2026';
 
 app.use(express.json({ limit: '50mb' }));   // base64 이미지 포함
-app.use(express.static(path.join(__dirname)));  // 정적 파일 서빙
+
+/* 요청 로그 미들웨어 (404 추적용) */
+app.use((req, res, next) => {
+  res.on('finish', () => {
+    if (res.statusCode >= 400) {
+      console.log(`[${res.statusCode}] ${req.method} ${req.url}`);
+    }
+  });
+  next();
+});
+
+// public/ 정적 파일 (랜딩, 로그인, 인트라넷 허브, 영상 등)
+app.use(express.static(path.join(__dirname, 'public')));
+// 차량 앱 정적 파일 (/car/ prefix 제거 후 루트 기준 서빙)
+app.use('/car', express.static(path.join(__dirname)));
+// 루트 정적 파일 (js/, css/ 등 공통 자원)
+app.use(express.static(path.join(__dirname)));
 
 /* ─────────────────────────────────────────
    DB 연결 설정 (createConnection 기반)
@@ -252,6 +271,33 @@ async function initTables() {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
+    // 10. 사용자 계정
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id           INT           AUTO_INCREMENT PRIMARY KEY,
+        username     VARCHAR(50)   NOT NULL UNIQUE,
+        password     VARCHAR(100)  NOT NULL COMMENT 'bcrypt hash',
+        name         VARCHAR(30)   NOT NULL,
+        role         VARCHAR(20)   DEFAULT 'staff' COMMENT 'admin|staff',
+        email        VARCHAR(100),
+        is_approved  TINYINT(1)    DEFAULT 0 COMMENT '관리자 승인 여부',
+        last_login   DATETIME,
+        created_at   DATETIME      DEFAULT CURRENT_TIMESTAMP,
+        updated_at   DATETIME      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    // 기본 admin 계정 (없으면 생성)
+    const [existingAdmin] = await conn.query(`SELECT id FROM users WHERE username = 'admin' LIMIT 1`);
+    if (!existingAdmin || existingAdmin.length === 0) {
+      const hash = await bcrypt.hash('eden2026!', 10);
+      await conn.query(
+        `INSERT INTO users (username, password, name, role, is_approved) VALUES (?, ?, ?, 'admin', 1)`,
+        ['admin', hash, '관리자']
+      );
+      console.log('✅ 기본 admin 계정 생성 (ID: admin / PW: eden2026!)');
+    }
+
     console.log('✅ 모든 테이블 준비 완료');
   } finally {
     conn.release();
@@ -264,6 +310,94 @@ async function initTables() {
 function ok(res, data)    { res.json({ ok: true,  data }); }
 function err(res, msg, code=500) { res.status(code).json({ ok: false, error: msg }); }
 function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+/* ─────────────────────────────────────────
+   JWT 인증 미들웨어
+───────────────────────────────────────── */
+function authMiddleware(req, res, next) {
+  const auth = req.headers['authorization'] || '';
+  const token = auth.startsWith('Bearer ') ? auth.slice(7) : req.query._token;
+  if (!token) return res.status(401).json({ ok: false, error: '로그인이 필요합니다.' });
+  try {
+    req.user = jwt.verify(token, JWT_SECRET);
+    next();
+  } catch(e) {
+    return res.status(401).json({ ok: false, error: '인증이 만료되었습니다. 다시 로그인하세요.' });
+  }
+}
+
+/* ─────────────────────────────────────────
+   API: 인증 (로그인 / 회원가입)
+───────────────────────────────────────── */
+// 로그인
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    if (!username || !password) return res.status(400).json({ ok: false, message: '아이디와 비밀번호를 입력하세요.' });
+
+    const [rows] = await pool.query('SELECT * FROM users WHERE username = ? LIMIT 1', [username]);
+    const user = rows[0];
+    if (!user) return res.json({ ok: false, message: '아이디 또는 비밀번호가 올바르지 않습니다.' });
+    if (!user.is_approved) return res.json({ ok: false, message: '관리자 승인 대기 중입니다.' });
+
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) return res.json({ ok: false, message: '아이디 또는 비밀번호가 올바르지 않습니다.' });
+
+    await pool.query('UPDATE users SET last_login = NOW() WHERE id = ?', [user.id]);
+
+    const payload = { id: user.id, username: user.username, name: user.name, role: user.role };
+    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
+    res.json({ ok: true, token, user: { id: user.id, username: user.username, name: user.name, role: user.role } });
+  } catch(e) {
+    console.error('로그인 오류:', e);
+    err(res, '서버 오류');
+  }
+});
+
+// 회원가입
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { username, password, name, email } = req.body;
+    if (!username || !password || !name) return res.status(400).json({ ok: false, message: '필수 항목을 입력하세요.' });
+    if (password.length < 6) return res.status(400).json({ ok: false, message: '비밀번호는 6자 이상이어야 합니다.' });
+
+    const [existing] = await pool.query('SELECT id FROM users WHERE username = ? LIMIT 1', [username]);
+    if (existing.length > 0) return res.json({ ok: false, message: '이미 사용 중인 아이디입니다.' });
+
+    const hash = await bcrypt.hash(password, 10);
+    await pool.query(
+      'INSERT INTO users (username, password, name, email, is_approved) VALUES (?, ?, ?, ?, 0)',
+      [username, hash, name, email || null]
+    );
+    res.json({ ok: true, message: '회원가입 신청이 완료되었습니다. 관리자 승인 후 로그인하세요.' });
+  } catch(e) {
+    console.error('회원가입 오류:', e);
+    err(res, '서버 오류');
+  }
+});
+
+// 토큰 검증 (인트라넷 진입 시)
+app.get('/api/auth/verify', authMiddleware, (req, res) => {
+  res.json({ ok: true, user: req.user });
+});
+
+// 사용자 목록 (관리자용)
+app.get('/api/auth/users', authMiddleware, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') return res.status(403).json({ ok: false, error: '권한이 없습니다.' });
+    const [rows] = await pool.query('SELECT id, username, name, role, email, is_approved, last_login, created_at FROM users ORDER BY created_at DESC');
+    ok(res, rows);
+  } catch(e) { err(res, e.message); }
+});
+
+// 사용자 승인 (관리자용)
+app.post('/api/auth/approve/:id', authMiddleware, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') return res.status(403).json({ ok: false, error: '권한이 없습니다.' });
+    await pool.query('UPDATE users SET is_approved = 1 WHERE id = ?', [req.params.id]);
+    res.json({ ok: true });
+  } catch(e) { err(res, e.message); }
+});
 
 /* ─────────────────────────────────────────
    API: 차량
@@ -806,6 +940,32 @@ app.get('/api/health', async (req, res) => {
    SPA fallback - index.html
 ───────────────────────────────────────── */
 app.get('*', (req, res) => {
+  const url = req.path;
+
+  // /intranet/* → 인트라넷 허브
+  if (url === '/intranet' || url.startsWith('/intranet/')) {
+    const intrFile = path.join(__dirname, 'public', 'intranet', 'index.html');
+    if (fs.existsSync(intrFile)) return res.sendFile(intrFile);
+  }
+
+  // /car/* → 기존 차량 운행기록부 앱
+  if (url === '/car' || url.startsWith('/car/')) {
+    return res.sendFile(path.join(__dirname, 'index.html'));
+  }
+
+  // /login → 로그인 페이지
+  if (url === '/login') {
+    const loginFile = path.join(__dirname, 'public', 'login.html');
+    if (fs.existsSync(loginFile)) return res.sendFile(loginFile);
+  }
+
+  // / (랜딩 페이지)
+  if (url === '/' || url === '/index.html') {
+    const landingFile = path.join(__dirname, 'public', 'index.html');
+    if (fs.existsSync(landingFile)) return res.sendFile(landingFile);
+  }
+
+  // 기타 정적 자원 처리
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 

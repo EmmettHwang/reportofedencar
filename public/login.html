@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>로그인 — (주)이든푸드 인트라넷</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --green: #2d8a4e; --green-dark: #1a5c33; --green-light: #4caf72;
+      --green-bg: #f0f9f3; --green-pale: #e8f5e9;
+      --text: #1a1a2e; --text-sub: #5a6472; --border: #d4e6d9;
+      --font: 'Noto Sans KR', sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font);
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    /* 왼쪽 비주얼 패널 */
+    .login-visual {
+      position: relative;
+      background: linear-gradient(135deg, #0d2b1a 0%, #1a5c33 50%, #2d8a4e 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px;
+      overflow: hidden;
+    }
+    .visual-bg-video {
+      position: absolute;
+      inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      opacity: .18;
+    }
+    .visual-content {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      color: #fff;
+    }
+    .visual-logo {
+      font-size: 22px;
+      font-weight: 800;
+      margin-bottom: 48px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .visual-title {
+      font-size: 36px;
+      font-weight: 800;
+      line-height: 1.3;
+      margin-bottom: 20px;
+      text-shadow: 0 2px 16px rgba(0,0,0,.3);
+    }
+    .visual-title span { color: #7edd9c; }
+    .visual-desc {
+      font-size: 15px;
+      opacity: .8;
+      line-height: 1.8;
+      margin-bottom: 48px;
+    }
+    .visual-features {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      text-align: left;
+      width: 100%;
+      max-width: 320px;
+    }
+    .visual-feat-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(255,255,255,.1);
+      border: 1px solid rgba(255,255,255,.15);
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 14px;
+      color: rgba(255,255,255,.9);
+      backdrop-filter: blur(4px);
+    }
+    .visual-feat-item span { font-size: 20px; }
+
+    /* 오른쪽 로그인 폼 */
+    .login-panel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #fff;
+      padding: 60px 48px;
+    }
+    .login-box { width: 100%; max-width: 380px; }
+    .login-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--text-sub);
+      margin-bottom: 40px;
+      transition: color .2s;
+    }
+    .login-back:hover { color: var(--green); }
+    .login-header { margin-bottom: 32px; }
+    .login-header h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+    .login-header p { font-size: 14px; color: var(--text-sub); }
+
+    /* 탭 */
+    .login-tabs {
+      display: flex;
+      gap: 0;
+      background: var(--green-bg);
+      border-radius: 10px;
+      padding: 4px;
+      margin-bottom: 28px;
+    }
+    .login-tab {
+      flex: 1;
+      padding: 9px;
+      border: none;
+      background: none;
+      border-radius: 7px;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: var(--font);
+      color: var(--text-sub);
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .login-tab.active {
+      background: #fff;
+      color: var(--green);
+      box-shadow: 0 2px 8px rgba(0,0,0,.1);
+    }
+
+    /* 폼 */
+    .form-group { margin-bottom: 16px; }
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 14px;
+      font-family: var(--font);
+      color: var(--text);
+      background: var(--green-bg);
+      transition: all .2s;
+    }
+    .form-group input:focus {
+      outline: none;
+      border-color: var(--green);
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(45,138,78,.1);
+    }
+    .form-option {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 22px;
+      font-size: 12px;
+    }
+    .form-option label { display: flex; align-items: center; gap: 6px; color: var(--text-sub); cursor: pointer; }
+    .form-option a { color: var(--green); font-weight: 600; }
+
+    .btn-login-main {
+      width: 100%;
+      padding: 14px;
+      background: var(--green);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 700;
+      font-family: var(--font);
+      cursor: pointer;
+      transition: all .2s;
+      margin-bottom: 16px;
+    }
+    .btn-login-main:hover { background: var(--green-dark); transform: translateY(-1px); }
+    .btn-login-main:active { transform: translateY(0); }
+
+    /* 구분선 */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 20px 0;
+      color: var(--text-sub);
+      font-size: 12px;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* Google 버튼 */
+    .btn-google {
+      width: 100%;
+      padding: 13px;
+      background: #fff;
+      color: #3c4043;
+      border: 1.5px solid #dadce0;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: var(--font);
+      cursor: pointer;
+      transition: all .2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .btn-google:hover { background: #f8f9fa; border-color: #bbb; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+    .btn-google svg { width: 18px; height: 18px; }
+
+    .login-footer-note {
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-sub);
+      margin-top: 24px;
+    }
+    .login-footer-note a { color: var(--green); font-weight: 600; }
+
+    /* 에러 메시지 */
+    .error-msg {
+      background: #fff0f0;
+      color: #c53030;
+      border: 1px solid #fca5a5;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    /* 회원가입 패널 */
+    #register-panel { display: none; }
+
+    /* 반응형 */
+    @media (max-width: 768px) {
+      body { grid-template-columns: 1fr; }
+      .login-visual { display: none; }
+      .login-panel { padding: 40px 24px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- 왼쪽 비주얼 -->
+<div class="login-visual">
+  <video class="visual-bg-video" autoplay muted loop playsinline>
+    <source src="/public/assets/video/hero.mp4" type="video/mp4" />
+  </video>
+  <div class="visual-content">
+    <div class="visual-logo">
+      <span>🌿</span> (주)이든푸드
+    </div>
+    <h2 class="visual-title">
+      신선함을<br /><span>이어가는</span><br />인트라넷
+    </h2>
+    <p class="visual-desc">
+      이든푸드 임직원 전용 업무 시스템입니다.<br />
+      로그인 후 모든 업무 기능을 이용하실 수 있습니다.
+    </p>
+    <div class="visual-features">
+      <div class="visual-feat-item"><span>🚗</span> 차량 운행기록 관리</div>
+      <div class="visual-feat-item"><span>🏢</span> 거래처 정보 관리</div>
+      <div class="visual-feat-item"><span>📊</span> 비용 명세서 & 엑셀 출력</div>
+      <div class="visual-feat-item"><span>🛒</span> 주문 · 결제 · 배송 (예정)</div>
+    </div>
+  </div>
+</div>
+
+<!-- 오른쪽 로그인 폼 -->
+<div class="login-panel">
+  <div class="login-box">
+    <a href="/" class="login-back">← 홈으로</a>
+
+    <div class="login-header">
+      <h1>인트라넷 로그인</h1>
+      <p>이든푸드 임직원만 접근 가능합니다</p>
+    </div>
+
+    <!-- 탭 -->
+    <div class="login-tabs">
+      <button class="login-tab active" id="tab-login" onclick="switchTab('login')">로그인</button>
+      <button class="login-tab" id="tab-register" onclick="switchTab('register')">회원가입</button>
+    </div>
+
+    <!-- 로그인 패널 -->
+    <div id="login-panel">
+      <div class="error-msg" id="login-error">아이디 또는 비밀번호가 올바르지 않습니다.</div>
+
+      <form id="login-form" onsubmit="doLogin(event)">
+        <div class="form-group">
+          <label>아이디</label>
+          <input type="text" id="login-id" placeholder="아이디를 입력하세요" required autocomplete="username" />
+        </div>
+        <div class="form-group">
+          <label>비밀번호</label>
+          <input type="password" id="login-pw" placeholder="비밀번호를 입력하세요" required autocomplete="current-password" />
+        </div>
+        <div class="form-option">
+          <label>
+            <input type="checkbox" id="remember-me" />
+            로그인 상태 유지
+          </label>
+          <a href="#" onclick="alert('관리자에게 문의하세요.')">비밀번호 찾기</a>
+        </div>
+        <button type="submit" class="btn-login-main">로그인</button>
+      </form>
+
+      <div class="divider">또는</div>
+
+      <button class="btn-google" onclick="alert('Google 로그인 연동 준비 중입니다.')">
+        <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Google 계정으로 로그인
+      </button>
+    </div>
+
+    <!-- 회원가입 패널 -->
+    <div id="register-panel">
+      <form id="register-form" onsubmit="doRegister(event)">
+        <div class="form-group">
+          <label>이름</label>
+          <input type="text" placeholder="실명을 입력하세요" required />
+        </div>
+        <div class="form-group">
+          <label>아이디</label>
+          <input type="text" placeholder="영문+숫자 4~16자" required />
+        </div>
+        <div class="form-group">
+          <label>비밀번호</label>
+          <input type="password" placeholder="8자 이상" required />
+        </div>
+        <div class="form-group">
+          <label>비밀번호 확인</label>
+          <input type="password" placeholder="비밀번호를 다시 입력하세요" required />
+        </div>
+        <button type="submit" class="btn-login-main">회원가입 신청</button>
+      </form>
+      <p style="font-size:12px;color:#888;text-align:center;margin-top:12px;">
+        관리자 승인 후 로그인이 가능합니다.
+      </p>
+    </div>
+
+    <div class="login-footer-note">
+      <a href="/">← (주)이든푸드 홈으로 돌아가기</a>
+    </div>
+  </div>
+</div>
+
+<script>
+function switchTab(tab) {
+  document.getElementById('login-panel').style.display    = tab === 'login'    ? 'block' : 'none';
+  document.getElementById('register-panel').style.display = tab === 'register' ? 'block' : 'none';
+  document.getElementById('tab-login').classList.toggle('active',    tab === 'login');
+  document.getElementById('tab-register').classList.toggle('active', tab === 'register');
+}
+
+async function doLogin(e) {
+  e.preventDefault();
+  const id = document.getElementById('login-id').value.trim();
+  const pw = document.getElementById('login-pw').value;
+  const errEl = document.getElementById('login-error');
+  errEl.style.display = 'none';
+
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: id, password: pw })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      // 토큰 저장
+      localStorage.setItem('eden_token', data.token);
+      localStorage.setItem('eden_user',  JSON.stringify(data.user));
+      window.location.href = '/intranet/';
+    } else {
+      errEl.textContent = data.message || '아이디 또는 비밀번호가 올바르지 않습니다.';
+      errEl.style.display = 'block';
+    }
+  } catch(err) {
+    errEl.textContent = '서버 연결에 실패했습니다. 잠시 후 다시 시도하세요.';
+    errEl.style.display = 'block';
+  }
+}
+
+async function doRegister(e) {
+  e.preventDefault();
+  alert('회원가입 신청이 접수되었습니다.\n관리자 승인 후 이용하실 수 있��니다.');
+  switchTab('login');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>인트라넷 — (주)이든푸드</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --green: #2d8a4e; --green-dark: #1a5c33; --green-light: #4caf72;
+      --green-bg: #f0f9f3; --green-pale: #e8f5e9;
+      --text: #1a1a2e; --text-sub: #5a6472; --border: #d4e6d9;
+      --sidebar-w: 240px;
+      --font: 'Noto Sans KR', sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--font); background: #f5f7fa; display: flex; min-height: 100vh; }
+
+    /* ── 사이드바 ── */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: #0d2b1a;
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      z-index: 100;
+      transition: transform .3s;
+    }
+    .sidebar-logo {
+      padding: 24px 20px 20px;
+      border-bottom: 1px solid rgba(255,255,255,.1);
+    }
+    .sidebar-logo a {
+      display: flex; align-items: center; gap: 10px;
+      color: #fff; text-decoration: none; font-size: 16px; font-weight: 800;
+    }
+    .sidebar-logo .logo-icon { font-size: 24px; }
+    .sidebar-logo .logo-sub {
+      font-size: 11px; font-weight: 400;
+      color: rgba(255,255,255,.5); margin-top: 2px;
+    }
+    .sidebar-user {
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .user-avatar {
+      width: 36px; height: 36px;
+      background: var(--green);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 15px; font-weight: 700;
+      flex-shrink: 0;
+    }
+    .user-info { overflow: hidden; }
+    .user-name { color: #fff; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-role { color: rgba(255,255,255,.45); font-size: 11px; }
+
+    .sidebar-nav { flex: 1; padding: 12px 0; overflow-y: auto; }
+    .nav-section-label {
+      padding: 8px 20px 4px;
+      font-size: 10px; font-weight: 700;
+      color: rgba(255,255,255,.3);
+      letter-spacing: .08em; text-transform: uppercase;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 20px;
+      color: rgba(255,255,255,.65);
+      text-decoration: none;
+      font-size: 13px; font-weight: 500;
+      border-radius: 0;
+      cursor: pointer;
+      transition: all .2s;
+      border-left: 3px solid transparent;
+      position: relative;
+    }
+    .nav-item:hover { background: rgba(255,255,255,.07); color: #fff; }
+    .nav-item.active {
+      background: rgba(45,138,78,.25);
+      color: #7edd9c;
+      border-left-color: var(--green-light);
+    }
+    .nav-item .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+    .nav-badge {
+      margin-left: auto;
+      background: var(--green);
+      color: #fff; font-size: 10px; font-weight: 700;
+      padding: 2px 6px; border-radius: 10px;
+    }
+    .nav-badge.soon {
+      background: rgba(255,255,255,.15);
+      color: rgba(255,255,255,.4);
+    }
+
+    .sidebar-bottom {
+      padding: 16px;
+      border-top: 1px solid rgba(255,255,255,.08);
+    }
+    .btn-logout {
+      width: 100%;
+      padding: 10px;
+      background: rgba(255,255,255,.07);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 8px;
+      color: rgba(255,255,255,.6);
+      font-size: 13px; font-family: var(--font);
+      cursor: pointer; transition: all .2s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-logout:hover { background: rgba(220,50,50,.2); color: #fc8181; border-color: rgba(220,50,50,.3); }
+
+    /* ── 메인 ── */
+    .main-wrap {
+      margin-left: var(--sidebar-w);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    .topbar {
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+      padding: 0 28px;
+      height: 60px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 50;
+    }
+    .topbar-title { font-size: 16px; font-weight: 700; color: var(--text); }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+    .topbar-time { font-size: 12px; color: var(--text-sub); }
+    .btn-hamburger {
+      display: none;
+      border: none; background: none; cursor: pointer;
+      font-size: 22px; color: var(--text);
+    }
+
+    .content { padding: 28px; flex: 1; }
+
+    /* ── 홈 섹션 ── */
+    .welcome-banner {
+      background: linear-gradient(135deg, #0d2b1a, #1a5c33, #2d8a4e);
+      border-radius: 16px;
+      padding: 28px 32px;
+      color: #fff;
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 28px;
+      overflow: hidden; position: relative;
+    }
+    .welcome-banner::after {
+      content: '🌿';
+      position: absolute; right: 60px; top: 50%; transform: translateY(-50%);
+      font-size: 80px; opacity: .12;
+    }
+    .welcome-text h2 { font-size: 22px; font-weight: 800; margin-bottom: 6px; }
+    .welcome-text p { font-size: 14px; opacity: .75; }
+    .welcome-badge {
+      background: rgba(255,255,255,.15);
+      border: 1px solid rgba(255,255,255,.2);
+      border-radius: 20px;
+      padding: 8px 16px;
+      font-size: 13px; font-weight: 600;
+      backdrop-filter: blur(4px);
+    }
+
+    /* ── 앱 카드 그리드 ── */
+    .app-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .app-card {
+      background: #fff;
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      padding: 24px 20px;
+      cursor: pointer;
+      transition: all .25s;
+      text-decoration: none;
+      display: block;
+      position: relative;
+      overflow: hidden;
+    }
+    .app-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(0,0,0,.1);
+      border-color: var(--green-light);
+    }
+    .app-card.disabled { cursor: default; opacity: .6; }
+    .app-card.disabled:hover { transform: none; box-shadow: none; border-color: var(--border); }
+    .app-card-icon { font-size: 36px; margin-bottom: 12px; }
+    .app-card-name { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+    .app-card-desc { font-size: 12px; color: var(--text-sub); line-height: 1.5; }
+    .app-card-tag {
+      position: absolute; top: 14px; right: 14px;
+      font-size: 10px; font-weight: 700;
+      padding: 3px 8px; border-radius: 10px;
+    }
+    .app-card-tag.live { background: #dcfce7; color: #166534; }
+    .app-card-tag.soon { background: #f1f5f9; color: #64748b; }
+
+    /* ── 섹션 제목 ── */
+    .section-title {
+      font-size: 14px; font-weight: 700;
+      color: var(--text-sub);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: 14px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    /* ── iframe 뷰 ── */
+    #app-frame-wrap {
+      display: none;
+      flex-direction: column;
+      height: calc(100vh - 60px);
+    }
+    .frame-topbar {
+      padding: 12px 20px;
+      background: var(--green-pale);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 12px;
+      flex-shrink: 0;
+    }
+    .btn-frame-back {
+      padding: 7px 14px;
+      background: var(--green);
+      color: #fff; border: none;
+      border-radius: 8px; font-size: 13px; font-weight: 600;
+      font-family: var(--font);
+      cursor: pointer; transition: background .2s;
+    }
+    .btn-frame-back:hover { background: var(--green-dark); }
+    .frame-title { font-size: 14px; font-weight: 700; color: var(--text); }
+    #app-iframe {
+      flex: 1;
+      border: none;
+      width: 100%;
+    }
+
+    /* ── 로딩 오버레이 ── */
+    #auth-check {
+      position: fixed; inset: 0;
+      background: #fff;
+      display: flex; align-items: center; justify-content: center;
+      z-index: 9999;
+      flex-direction: column; gap: 16px;
+    }
+    .auth-spinner {
+      width: 40px; height: 40px;
+      border: 4px solid var(--green-pale);
+      border-top-color: var(--green);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── 반응형 ── */
+    @media (max-width: 768px) {
+      :root { --sidebar-w: 0px; }
+      .sidebar {
+        transform: translateX(-240px);
+        width: 240px;
+      }
+      .sidebar.open { transform: translateX(0); }
+      .main-wrap { margin-left: 0; }
+      .btn-hamburger { display: block; }
+      .welcome-banner { flex-direction: column; gap: 12px; align-items: flex-start; }
+      .app-grid { grid-template-columns: 1fr 1fr; }
+      .content { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- 인증 체크 오버레이 -->
+<div id="auth-check">
+  <div class="auth-spinner"></div>
+  <p style="color:#5a6472;font-size:14px;">인증 확인 중...</p>
+</div>
+
+<!-- ===== 사이드바 ===== -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <a href="/intranet/">
+      <span class="logo-icon">🌿</span>
+      <div>
+        <div>(주)이든푸드</div>
+        <div class="logo-sub">인트라넷 v1.0</div>
+      </div>
+    </a>
+  </div>
+  <div class="sidebar-user">
+    <div class="user-avatar" id="user-avatar">?</div>
+    <div class="user-info">
+      <div class="user-name" id="user-name">로딩 중...</div>
+      <div class="user-role" id="user-role">-</div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">메인</div>
+    <a class="nav-item active" onclick="showHome()" href="#">
+      <span class="nav-icon">🏠</span> 홈 대시보드
+    </a>
+
+    <div class="nav-section-label" style="margin-top:8px;">업무 시스템</div>
+    <a class="nav-item" onclick="openApp('car')" href="#">
+      <span class="nav-icon">🚗</span> 차량 운행기록부
+      <span class="nav-badge live">LIVE</span>
+    </a>
+    <a class="nav-item disabled" href="#">
+      <span class="nav-icon">🛒</span> 주문 관리
+      <span class="nav-badge soon">준비중</span>
+    </a>
+    <a class="nav-item disabled" href="#">
+      <span class="nav-icon">📦</span> 상품 관리
+      <span class="nav-badge soon">준비중</span>
+    </a>
+    <a class="nav-item disabled" href="#">
+      <span class="nav-icon">📝</span> 블로그 관리
+      <span class="nav-badge soon">준비중</span>
+    </a>
+    <a class="nav-item disabled" href="#">
+      <span class="nav-icon">👥</span> 고객 관리
+      <span class="nav-badge soon">준비중</span>
+    </a>
+  </nav>
+  <div class="sidebar-bottom">
+    <button class="btn-logout" onclick="doLogout()">
+      <span>🚪</span> 로그아웃
+    </button>
+  </div>
+</aside>
+
+<!-- ===== 메인 ===== -->
+<div class="main-wrap">
+  <header class="topbar">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button class="btn-hamburger" id="btn-hamburger" onclick="toggleSidebar()">☰</button>
+      <span class="topbar-title" id="topbar-title">홈 대시보드</span>
+    </div>
+    <div class="topbar-right">
+      <span class="topbar-time" id="topbar-time"></span>
+    </div>
+  </header>
+
+  <!-- 홈 콘텐츠 -->
+  <div id="home-content" class="content">
+    <div class="welcome-banner">
+      <div class="welcome-text">
+        <h2>안녕하세요, <span id="welcome-name">사용자</span>님 👋</h2>
+        <p id="welcome-date">오늘도 좋은 하루 되세요!</p>
+      </div>
+      <div class="welcome-badge" id="welcome-badge">🌿 이든푸드 인트라넷</div>
+    </div>
+
+    <p class="section-title">업무 앱</p>
+    <div class="app-grid">
+      <a class="app-card" onclick="openApp('car')" href="#">
+        <span class="app-card-tag live">운영중</span>
+        <div class="app-card-icon">🚗</div>
+        <div class="app-card-name">차량 운행기록부</div>
+        <div class="app-card-desc">차량 관리, 거래처, 운행일지, 비용 명세서, 엑셀 출력</div>
+      </a>
+      <div class="app-card disabled">
+        <span class="app-card-tag soon">준비중</span>
+        <div class="app-card-icon">🛒</div>
+        <div class="app-card-name">주문 관리</div>
+        <div class="app-card-desc">온라인 주문 접수, 처리 현황, 배송 추적</div>
+      </div>
+      <div class="app-card disabled">
+        <span class="app-card-tag soon">준비중</span>
+        <div class="app-card-icon">📦</div>
+        <div class="app-card-name">상품 관리</div>
+        <div class="app-card-desc">상품 등록, 재고 현황, 가격 관리</div>
+      </div>
+      <div class="app-card disabled">
+        <span class="app-card-tag soon">준비중</span>
+        <div class="app-card-icon">📝</div>
+        <div class="app-card-name">블로그 관리</div>
+        <div class="app-card-desc">회사 소식, 레시피, 공지사항 작성</div>
+      </div>
+      <div class="app-card disabled">
+        <span class="app-card-tag soon">준비중</span>
+        <div class="app-card-icon">👥</div>
+        <div class="app-card-name">고객 관리</div>
+        <div class="app-card-desc">거래처 DB, 구매 이력, CRM</div>
+      </div>
+      <div class="app-card disabled">
+        <span class="app-card-tag soon">준비중</span>
+        <div class="app-card-icon">📊</div>
+        <div class="app-card-name">매출 분석</div>
+        <div class="app-card-desc">월별·분기별 매출 현황 대시보드</div>
+      </div>
+    </div>
+
+    <p class="section-title">공지 & 안내</p>
+    <div style="background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:20px;">
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div style="display:flex;gap:12px;align-items:flex-start;padding-bottom:12px;border-bottom:1px solid var(--border);">
+          <span style="font-size:20px;">📌</span>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px;">인트라넷 v1.0 오픈 안내</div>
+            <div style="font-size:12px;color:var(--text-sub);">차량 운행기록부 시스템이 인트라넷에 통합되었습니다. 로그인 후 이용하세요.</div>
+            <div style="font-size:11px;color:#aaa;margin-top:4px;">2026-03-09</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <span style="font-size:20px;">🔔</span>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px;">추가 기능 개발 예정</div>
+            <div style="font-size:12px;color:var(--text-sub);">주문/결제/배송 관리, 상품 소개, 블로그 기능이 순차적으로 추가될 예정입니다.</div>
+            <div style="font-size:11px;color:#aaa;margin-top:4px;">2026-03-09</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- iframe 앱 뷰 -->
+  <div id="app-frame-wrap">
+    <div class="frame-topbar">
+      <button class="btn-frame-back" onclick="showHome()">← 홈으로</button>
+      <span class="frame-title" id="frame-title">앱</span>
+    </div>
+    <iframe id="app-iframe" src="" title="앱"></iframe>
+  </div>
+</div>
+
+<!-- 사이드바 오버레이 (모바일) -->
+<div id="sidebar-overlay" onclick="toggleSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:99;"></div>
+
+<script>
+/* ── 인증 체크 ── */
+(async () => {
+  const token = localStorage.getItem('eden_token');
+  if (!token) { location.href = '/login'; return; }
+  try {
+    const res = await fetch('/api/auth/verify', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await res.json();
+    if (!data.ok) { localStorage.removeItem('eden_token'); location.href = '/login'; return; }
+    initIntranet(data.user);
+  } catch(e) {
+    // 서버 오류 시도 그냥 token 기준으로 처리
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      if (payload.exp && payload.exp * 1000 < Date.now()) {
+        localStorage.removeItem('eden_token'); location.href = '/login'; return;
+      }
+      initIntranet(payload);
+    } catch { location.href = '/login'; }
+  }
+})();
+
+function initIntranet(user) {
+  document.getElementById('auth-check').style.display = 'none';
+
+  // 사용자 정보 표시
+  const name = user.name || user.username || '사용자';
+  document.getElementById('user-name').textContent = name;
+  document.getElementById('user-role').textContent = user.role === 'admin' ? '관리자' : '직원';
+  document.getElementById('user-avatar').textContent = name[0] || '?';
+  document.getElementById('welcome-name').textContent = name;
+
+  // 날짜
+  const now = new Date();
+  const days = ['일','월','화','수','목','금','토'];
+  document.getElementById('welcome-date').textContent =
+    `${now.getFullYear()}년 ${now.getMonth()+1}월 ${now.getDate()}일 (${days[now.getDay()]}) · 오늘도 좋은 하루 되세요!`;
+
+  // 시계
+  function tick() {
+    const d = new Date();
+    document.getElementById('topbar-time').textContent =
+      d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
+  tick(); setInterval(tick, 1000);
+}
+
+/* ── 홈 / 앱 전환 ── */
+function showHome() {
+  document.getElementById('home-content').style.display = 'block';
+  document.getElementById('app-frame-wrap').style.display = 'none';
+  document.getElementById('app-iframe').src = '';
+  document.getElementById('topbar-title').textContent = '홈 대시보드';
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-item')[0].classList.add('active');
+}
+
+const appMeta = {
+  car: { title: '차량 운행기록부', url: '/car/' }
+};
+
+function openApp(key) {
+  const meta = appMeta[key];
+  if (!meta) return;
+  document.getElementById('home-content').style.display = 'none';
+  const fw = document.getElementById('app-frame-wrap');
+  fw.style.display = 'flex';
+  document.getElementById('frame-title').textContent = meta.title;
+  document.getElementById('topbar-title').textContent = meta.title;
+  const token = localStorage.getItem('eden_token');
+  document.getElementById('app-iframe').src = meta.url + '?_token=' + encodeURIComponent(token);
+}
+
+/* ── 로그아웃 ── */
+function doLogout() {
+  if (!confirm('로그아웃 하시겠습니까?')) return;
+  localStorage.removeItem('eden_token');
+  localStorage.removeItem('eden_user');
+  location.href = '/';
+}
+
+/* ── 모바일 사이드바 ── */
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebar-overlay');
+  const open = sb.classList.toggle('open');
+  ov.style.display = open ? 'block' : 'none';
+}
+</script>
+</body>
+</html>

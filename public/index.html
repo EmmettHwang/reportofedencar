@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>(주)이든푸드 — 신선함을 잇는 가치</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/public/assets/landing.css" />
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<header class="site-header" id="site-header">
+  <div class="header-inner">
+    <a href="/" class="logo">
+      <span class="logo-icon">🌿</span>
+      <span class="logo-text">(주)이든푸드</span>
+    </a>
+    <nav class="main-nav-links">
+      <a href="#about">회사소개</a>
+      <a href="#services">서비스</a>
+      <a href="#features">특장점</a>
+      <a href="#contact">문의</a>
+    </nav>
+    <div class="header-actions">
+      <a href="/login" class="btn-login">직원 로그인</a>
+    </div>
+    <button class="nav-hamburger" id="nav-hamburger" aria-label="메뉴">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+  <!-- 모바일 드롭다운 -->
+  <div class="mobile-menu" id="mobile-menu">
+    <a href="#about">회사소개</a>
+    <a href="#services">서비스</a>
+    <a href="#features">특장점</a>
+    <a href="#contact">문의</a>
+    <a href="/login" class="mobile-login-btn">직원 로그인 →</a>
+  </div>
+</header>
+
+<!-- ===== HERO ===== -->
+<section class="hero" id="hero">
+  <div class="hero-video-wrap">
+    <video class="hero-video" autoplay muted loop playsinline poster="">
+      <source src="/public/assets/video/hero.mp4" type="video/mp4" />
+    </video>
+    <div class="hero-overlay"></div>
+  </div>
+  <div class="hero-content">
+    <div class="hero-badge">🌿 신선함의 기준</div>
+    <h1 class="hero-title">
+      매일 아침,<br />
+      <span class="hero-accent">신선한 가치</span>를<br />
+      전달합니다
+    </h1>
+    <p class="hero-desc">
+      이든푸드는 건강하고 신선한 식품을<br />
+      합리적인 가격으로 고객 곁에 직접 전달합니다.
+    </p>
+    <div class="hero-btns">
+      <a href="#services" class="btn-primary-lg">서비스 알아보기</a>
+      <a href="#contact" class="btn-outline-lg">문의하기</a>
+    </div>
+  </div>
+  <div class="hero-scroll-hint">
+    <span>스크롤</span>
+    <div class="scroll-arrow"></div>
+  </div>
+</section>
+
+<!-- ===== STATS ===== -->
+<section class="stats-bar">
+  <div class="stats-inner">
+    <div class="stat-item">
+      <span class="stat-num" data-target="500">0</span><span class="stat-unit">+</span>
+      <span class="stat-label">거래처</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-item">
+      <span class="stat-num" data-target="15">0</span><span class="stat-unit">년</span>
+      <span class="stat-label">업력</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-item">
+      <span class="stat-num" data-target="99">0</span><span class="stat-unit">%</span>
+      <span class="stat-label">고객 만족도</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-item">
+      <span class="stat-num" data-target="365">0</span><span class="stat-unit">일</span>
+      <span class="stat-label">연중 무휴 공급</span>
+    </div>
+  </div>
+</section>
+
+<!-- ===== ABOUT ===== -->
+<section class="about-section" id="about">
+  <div class="container">
+    <div class="section-badge">About Us</div>
+    <h2 class="section-title">신선함으로 <span class="green">이어지는 신뢰</span></h2>
+    <p class="section-sub">이든푸드는 산지 직거래부터 라스트마일 배송까지,<br />식품 공급 전 과정을 직접 관리합니다.</p>
+    <div class="about-grid">
+      <div class="about-card">
+        <div class="about-icon">🌱</div>
+        <h3>산지 직거래</h3>
+        <p>신뢰할 수 있는 농가와 직접 계약하여 가장 신선한 상태로 공급합니다.</p>
+      </div>
+      <div class="about-card">
+        <div class="about-icon">🚚</div>
+        <h3>신속한 배송</h3>
+        <p>체계적인 콜드체인 물류로 신선도를 유지하며 당일 배송을 실현합니다.</p>
+      </div>
+      <div class="about-card">
+        <div class="about-icon">🔒</div>
+        <h3>품질 보증</h3>
+        <p>엄격한 품질 기준과 위생 관리로 안전한 식품만을 취급합니다.</p>
+      </div>
+      <div class="about-card">
+        <div class="about-icon">🤝</div>
+        <h3>파트너십</h3>
+        <p>고객사와 장기적인 신뢰 관계를 구축하며 함께 성장합니다.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SERVICES ===== -->
+<section class="services-section" id="services">
+  <div class="container">
+    <div class="section-badge green-badge">Services</div>
+    <h2 class="section-title">이든푸드의 <span class="green">핵심 서비스</span></h2>
+    <p class="section-sub">다양한 업종의 고객사에 맞춤형 식품 공급 서비스를 제공합니다.</p>
+    <div class="services-grid">
+      <div class="service-card featured">
+        <div class="service-img-wrap">
+          <div class="service-emoji">🥬</div>
+        </div>
+        <div class="service-body">
+          <span class="service-tag">신선식품</span>
+          <h3>신선 채소 · 과일 공급</h3>
+          <p>당일 수확한 신선 채소와 과일을 급식소, 식당, 병원 등에 정기 공급합니다.</p>
+          <ul class="service-list">
+            <li>✅ 산지 직송</li>
+            <li>✅ 정기 계약 할인</li>
+            <li>✅ 소량 주문 가능</li>
+          </ul>
+        </div>
+      </div>
+      <div class="service-card">
+        <div class="service-img-wrap">
+          <div class="service-emoji">🥩</div>
+        </div>
+        <div class="service-body">
+          <span class="service-tag">축산물</span>
+          <h3>육류 · 수산물 공급</h3>
+          <p>HACCP 인증 업체와 협력하여 안전하고 위생적인 육류·수산물을 공급합니다.</p>
+          <ul class="service-list">
+            <li>✅ HACCP 인증</li>
+            <li>✅ 온도 관리 배송</li>
+            <li>✅ 원산지 표기</li>
+          </ul>
+        </div>
+      </div>
+      <div class="service-card">
+        <div class="service-img-wrap">
+          <div class="service-emoji">🏭</div>
+        </div>
+        <div class="service-body">
+          <span class="service-tag">가공식품</span>
+          <h3>식자재 · 가공품 공급</h3>
+          <p>각종 소스류, 가공식품, 식자재를 대량 구매가로 합리적으로 제공합니다.</p>
+          <ul class="service-list">
+            <li>✅ 대량 구매 할인</li>
+            <li>✅ 유통기한 관리</li>
+            <li>✅ 정기 배송</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== FEATURES ===== -->
+<section class="features-section" id="features">
+  <div class="features-bg"></div>
+  <div class="container features-inner">
+    <div class="features-text">
+      <div class="section-badge">Why EdenFood</div>
+      <h2 class="section-title">왜 <span class="green">이든푸드</span>인가요?</h2>
+      <div class="feature-list">
+        <div class="feature-item">
+          <div class="feature-icon">📱</div>
+          <div class="feature-body">
+            <h4>스마트 주문 관리</h4>
+            <p>앱으로 간편하게 주문하고, 배송 현황을 실시간으로 확인하세요.</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">📊</div>
+          <div class="feature-body">
+            <h4>데이터 기반 운영</h4>
+            <p>구매 이력 분석으로 재고 낭비를 줄이고 비용을 최적화합니다.</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">🌿</div>
+          <div class="feature-body">
+            <h4>친환경 패키징</h4>
+            <p>재활용 가능한 친환경 포장재 사용으로 환경을 함께 지킵니다.</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">📞</div>
+          <div class="feature-body">
+            <h4>전담 CS 매니저</h4>
+            <p>전담 매니저가 배정되어 신속하고 친절하게 문제를 해결합니다.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="features-visual">
+      <div class="phone-mockup">
+        <div class="phone-screen">
+          <div class="app-header-mock">
+            <span>🌿 이든푸드</span>
+            <span class="mock-status">오늘 배송 완료 ✅</span>
+          </div>
+          <div class="app-order-list">
+            <div class="mock-order">
+              <span class="mock-emoji">🥬</span>
+              <div>
+                <strong>신선 채소 모듬</strong>
+                <small>5kg · 오늘 오전 배송</small>
+              </div>
+              <span class="mock-price">₩24,000</span>
+            </div>
+            <div class="mock-order">
+              <span class="mock-emoji">🥩</span>
+              <div>
+                <strong>국내산 돼지고기</strong>
+                <small>3kg · 내일 배송</small>
+              </div>
+              <span class="mock-price">₩38,500</span>
+            </div>
+            <div class="mock-order">
+              <span class="mock-emoji">🍎</span>
+              <div>
+                <strong>사과 (특품)</strong>
+                <small>10kg · 정기 구독</small>
+              </div>
+              <span class="mock-price">₩42,000</span>
+            </div>
+          </div>
+          <div class="mock-btn">새 주문하기 +</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== CTA ===== -->
+<section class="cta-section">
+  <div class="container cta-inner">
+    <div class="cta-leaf cta-leaf-1">🌿</div>
+    <div class="cta-leaf cta-leaf-2">🍃</div>
+    <h2>지금 바로 시작하세요</h2>
+    <p>이든푸드와 함께라면 신선하고 합리적인 식품 공급이 가능합니다.<br />지금 문의하시면 전담 매니저가 맞춤 견적을 제안해 드립니다.</p>
+    <div class="cta-btns">
+      <a href="#contact" class="btn-primary-lg">무료 상담 신청</a>
+      <a href="tel:032-000-0000" class="btn-outline-lg btn-white">📞 전화 문의</a>
+    </div>
+  </div>
+</section>
+
+<!-- ===== CONTACT ===== -->
+<section class="contact-section" id="contact">
+  <div class="container">
+    <div class="section-badge">Contact</div>
+    <h2 class="section-title">문의 <span class="green">& 상담</span></h2>
+    <p class="section-sub">궁금한 점이 있으시면 언제든지 연락주세요.</p>
+    <div class="contact-grid">
+      <div class="contact-info">
+        <div class="contact-item">
+          <span class="contact-icon">📍</span>
+          <div>
+            <strong>주소</strong>
+            <p>인천광역시 서구 청라동</p>
+          </div>
+        </div>
+        <div class="contact-item">
+          <span class="contact-icon">📞</span>
+          <div>
+            <strong>전화</strong>
+            <p>032-000-0000</p>
+          </div>
+        </div>
+        <div class="contact-item">
+          <span class="contact-icon">✉️</span>
+          <div>
+            <strong>이메일</strong>
+            <p>info@edenfood.co.kr</p>
+          </div>
+        </div>
+        <div class="contact-item">
+          <span class="contact-icon">🕐</span>
+          <div>
+            <strong>운영시간</strong>
+            <p>평일 08:00 ~ 18:00</p>
+          </div>
+        </div>
+      </div>
+      <form class="contact-form" id="contact-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label>회사명 / 성함 <span class="req">*</span></label>
+            <input type="text" placeholder="예: 청라감자탕 / 홍길동" required />
+          </div>
+          <div class="form-group">
+            <label>연락처 <span class="req">*</span></label>
+            <input type="tel" placeholder="예: 010-1234-5678" required />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>이메일</label>
+          <input type="email" placeholder="예: contact@company.com" />
+        </div>
+        <div class="form-group">
+          <label>문의 내용 <span class="req">*</span></label>
+          <textarea rows="4" placeholder="필요하신 식품 종류, 수량, 배송 주기 등을 알려주세요." required></textarea>
+        </div>
+        <button type="submit" class="btn-submit">상담 신청하기 →</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- ===== FOOTER ===== -->
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <span class="logo-icon">🌿</span>
+      <span class="logo-text">(주)이든푸드</span>
+      <p>신선함을 잇는 가치, 이든푸드</p>
+    </div>
+    <div class="footer-links">
+      <div class="footer-col">
+        <strong>회사</strong>
+        <a href="#about">회사소개</a>
+        <a href="#services">서비스</a>
+        <a href="#contact">문의</a>
+      </div>
+      <div class="footer-col">
+        <strong>직원</strong>
+        <a href="/login">인트라넷 로그인</a>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>© 2026 (주)이든푸드. All rights reserved.</p>
+    <p>사업자등록번호: 000-00-00000 | 대표: 황○○</p>
+  </div>
+</footer>
+
+<script>
+// 헤더 스크롤 효과
+const header = document.getElementById('site-header');
+window.addEventListener('scroll', () => {
+  header.classList.toggle('scrolled', window.scrollY > 50);
+});
+
+// 모바일 메뉴
+document.getElementById('nav-hamburger').addEventListener('click', () => {
+  document.getElementById('mobile-menu').classList.toggle('open');
+});
+
+// 숫자 카운터 애니메이션
+function animateCounter(el) {
+  const target = parseInt(el.dataset.target);
+  const duration = 1800;
+  const step = target / (duration / 16);
+  let current = 0;
+  const timer = setInterval(() => {
+    current = Math.min(current + step, target);
+    el.textContent = Math.floor(current).toLocaleString();
+    if (current >= target) clearInterval(timer);
+  }, 16);
+}
+
+// IntersectionObserver로 뷰포트 진입 시 카운터 실행
+const counters = document.querySelectorAll('.stat-num');
+const obs = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) { animateCounter(e.target); obs.unobserve(e.target); }
+  });
+}, { threshold: 0.5 });
+counters.forEach(c => obs.observe(c));
+
+// 스크롤 페이드인
+const fadeEls = document.querySelectorAll('.about-card, .service-card, .feature-item, .contact-item');
+const fadeObs = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.15 });
+fadeEls.forEach(el => { el.classList.add('fade-in-up'); fadeObs.observe(el); });
+
+// 문의 폼
+document.getElementById('contact-form').addEventListener('submit', e => {
+  e.preventDefault();
+  const btn = e.target.querySelector('.btn-submit');
+  btn.textContent = '✅ 접수되었습니다!';
+  btn.style.background = '#2d8a4e';
+  setTimeout(() => { btn.textContent = '상담 신청하기 →'; btn.style.background = ''; }, 3000);
+});
+
+// 스무스 스크롤
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.getElementById('mobile-menu').classList.remove('open');
+  });
+});
+</script>
+</body>
+</html>
