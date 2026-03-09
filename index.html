@@ -3,384 +3,787 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>업무용 승용차 운행기록부</title>
+  <title>(주)이든푸드 차량 운행기록부 v2.8</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="css/style.css" />
-  <!-- SheetJS for Excel export (local) -->
   <script src="js/xlsx.full.min.js"></script>
+  <script src="js/exceljs.min.js"></script>
+  <script src="js/jspdf.umd.min.js"></script>
+  <script src="js/html2canvas.min.js"></script>
 </head>
 <body>
 
-<!-- ===== TOP HEADER ===== -->
 <header class="top-header">
   <div class="header-inner">
     <span class="header-icon">🚗</span>
-    <h1>업무용 승용차 운행기록부</h1>
-    <span class="header-sub">차량 운행일지 관리 시스템</span>
+    <h1 id="header-company" style="cursor:pointer;" title="대시보드로 이동">(주)이든푸드</h1>
+    <span class="header-sub">업무용 승용차 운행기록부 &amp; 비용 관리 시스템</span>
+    <span class="header-version-badge" id="header-version" title="README / 버전 정보">v2.8.20260309</span>
   </div>
 </header>
 
-<!-- ===== NAV TABS ===== -->
 <nav class="main-nav">
+  <button class="nav-btn" data-tab="tab-dashboard">🏠 대시보드</button>
   <button class="nav-btn active" data-tab="tab-vehicle">🚗 차량 관리</button>
   <button class="nav-btn" data-tab="tab-client">🏢 거래처 관리</button>
-  <button class="nav-btn" data-tab="tab-settings">⚙️ 운행 설정</button>
-  <button class="nav-btn" data-tab="tab-logbook">📅 운행일지 작성</button>
+  <button class="nav-btn" data-tab="tab-logbook">📅 운행일지</button>
+  <button class="nav-btn" data-tab="tab-cost">💰 비용 명세서</button>
   <button class="nav-btn" data-tab="tab-export">📊 엑셀 출력</button>
 </nav>
 
-<!-- ===== MAIN CONTENT ===== -->
 <main class="main-content">
 
-  <!-- ==============================
-       TAB 1: 차량 관리
-  ============================== -->
+  <!-- ====== TAB 0: 대시보드 ====== -->
+  <section id="tab-dashboard" class="tab-section">
+    <div id="dashboard-root">
+      <!-- JS가 렌더링 -->
+      <div style="text-align:center;padding:60px;color:#9ca3af;">대시보드 로딩 중...</div>
+    </div>
+  </section>
+
+  <!-- ====== TAB 1: 차량 관리 (통합) ====== -->
   <section id="tab-vehicle" class="tab-section active">
-    <div class="section-header">
-      <h2>🚗 차량 관리</h2>
-      <button class="btn btn-primary" id="btn-add-vehicle">+ 차량 등록</button>
-    </div>
-
-    <!-- 차량 등록/수정 폼 -->
-    <div class="card form-card" id="vehicle-form-card" style="display:none;">
-      <h3 id="vehicle-form-title">차량 등록</h3>
-      <div class="form-grid">
-        <div class="form-group">
-          <label>차량등록번호 <span class="required">*</span></label>
-          <input type="text" id="v-regno" placeholder="예: 159러1358" maxlength="15" />
-        </div>
-        <div class="form-group">
-          <label>차종 <span class="required">*</span></label>
-          <input type="text" id="v-model" placeholder="예: 현대 소나타" maxlength="30" />
-        </div>
-        <div class="form-group">
-          <label>연식</label>
-          <input type="number" id="v-year" placeholder="예: 2022" min="2000" max="2030" />
-        </div>
-        <div class="form-group">
-          <label>현재 누적주행거리 (km) <span class="required">*</span></label>
-          <input type="number" id="v-odometer" placeholder="예: 34576" min="0" />
-        </div>
-        <div class="form-group">
-          <label>메모</label>
-          <input type="text" id="v-memo" placeholder="기타 사항" maxlength="50" />
-        </div>
-      </div>
-      <div class="form-actions">
-        <button class="btn btn-primary" id="btn-save-vehicle">💾 저장</button>
-        <button class="btn btn-cancel" id="btn-cancel-vehicle">취소</button>
+    <!-- 차량 선택 바 -->
+    <div class="vehicle-mgr-header">
+      <div class="vehicle-mgr-select-row">
+        <label class="vmgr-label">🚗 차량 선택</label>
+        <select id="vmgr-vehicle-select" class="vmgr-vehicle-select">
+          <option value="">-- 차량을 선택하세요 --</option>
+        </select>
+        <button class="btn btn-primary btn-sm" id="btn-add-vehicle">+ 새 차량 등록</button>
       </div>
     </div>
 
-    <!-- 차량 목록 -->
-    <div class="card">
-      <table class="data-table" id="vehicle-table">
-        <thead>
-          <tr>
-            <th>번호</th>
-            <th>등록번호</th>
-            <th>차종</th>
-            <th>연식</th>
-            <th>누적주행(km)</th>
-            <th>메모</th>
-            <th>관리</th>
-          </tr>
-        </thead>
-        <tbody id="vehicle-tbody">
-          <tr><td colspan="7" class="empty-row">등록된 차량이 없습니다.</td></tr>
-        </tbody>
-      </table>
+    <!-- 서브탭 바 -->
+    <div class="sub-tab-bar" id="vmgr-subtab-bar">
+      <button class="sub-tab-btn active" data-subtab="vmgr-tab-info">📋 기본정보</button>
+      <button class="sub-tab-btn" data-subtab="vmgr-tab-settings">⚙️ 운행설정</button>
+      <button class="sub-tab-btn" data-subtab="vmgr-tab-cost">💰 고정비용</button>
+      <button class="sub-tab-btn" data-subtab="vmgr-tab-docs">📄 추가정보</button>
+    </div>
+
+    <!-- ── 서브탭 1: 기본정보 ── -->
+    <div id="vmgr-tab-info" class="sub-tab-section active">
+      <div class="card form-card" id="vehicle-form-card">
+        <div class="vmgr-form-header">
+          <h3 id="vehicle-form-title">🚗 차량 기본 정보</h3>
+          <div class="vmgr-form-actions-top">
+            <button class="btn btn-primary" id="btn-save-vehicle">💾 저장</button>
+            <button class="btn btn-danger btn-sm" id="btn-delete-vehicle" style="display:none;">🗑️ 삭제</button>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>차량등록번호 <span class="required">*</span></label>
+            <input type="text" id="v-regno" placeholder="예: 159러1358" maxlength="15" />
+          </div>
+          <div class="form-group">
+            <label>차종 <span class="required">*</span></label>
+            <input type="text" id="v-model" placeholder="예: 현대 소나타" maxlength="30" />
+          </div>
+          <div class="form-group">
+            <label>연식</label>
+            <input type="number" id="v-year" placeholder="예: 2022" min="2000" max="2030" data-no-comma />
+          </div>
+          <div class="form-group">
+            <label>현재 누적주행거리 (km) <span class="required">*</span></label>
+            <input type="number" id="v-odometer" placeholder="예: 34576" min="0" />
+          </div>
+          <div class="form-group">
+            <label>연비 (km/L)</label>
+            <input type="number" id="v-fuel-eff" placeholder="예: 12.5" min="1" max="50" step="0.1" />
+            <small class="hint">유류비 소진 계산에 사용</small>
+          </div>
+          <div class="form-group">
+            <label>유가 (원/L)</label>
+            <input type="number" id="v-fuel-price" placeholder="예: 1650" min="500" max="5000" />
+            <small class="hint">현재 주유 단가</small>
+          </div>
+          <div class="form-group">
+            <label>메모</label>
+            <input type="text" id="v-memo" placeholder="기타 사항" maxlength="50" />
+          </div>
+        </div>
+        <!-- 차량 목록 (카드형) - 신규등록 모드에서만 표시 -->
+        <div id="vehicle-cards-container" style="margin-top:20px;">
+          <div class="empty-row" style="text-align:center;padding:30px;color:#9ca3af;">등록된 차량이 없습니다.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 서브탭 2: 운행설정 ── -->
+    <div id="vmgr-tab-settings" class="sub-tab-section">
+      <div class="settings-grid">
+        <div class="card settings-card">
+          <h3>🏠 출퇴근 설정</h3>
+          <div class="form-group">
+            <label>출퇴근 왕복거리 (km)</label>
+            <input type="number" id="s-commute-dist" placeholder="예: 22" min="1" max="300" />
+          </div>
+          <div class="form-group">
+            <label>거리 오차범위 (± km)</label>
+            <input type="number" id="s-commute-var" placeholder="예: 2" min="0" max="30" value="0" />
+          </div>
+          <div class="form-group">
+            <label>주 출퇴근 횟수</label>
+            <select id="s-commute-days">
+              <option value="1">주 1회</option>
+              <option value="2" selected>주 2회</option>
+              <option value="3">주 3회</option>
+              <option value="4">주 4회</option>
+              <option value="5">주 5회</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>출퇴근 통행료 (편도, 원)</label>
+            <input type="number" id="s-commute-toll" placeholder="예: 1200" min="0" value="0" />
+            <small class="hint">방문 시 왕복 자동 반영 (×2)</small>
+          </div>
+        </div>
+        <div class="card settings-card">
+          <h3>📏 연간 목표</h3>
+          <div class="form-group">
+            <label>연간 목표 주행거리 (km)</label>
+            <input type="number" id="s-annual-km" value="7000" min="1000" max="50000" />
+          </div>
+        </div>
+        <div class="card settings-card">
+          <h3>🎲 자동생성 옵션</h3>
+          <div class="auto-gen-section">
+            <div class="auto-gen-section-title">📅 출퇴근 요일 배치</div>
+            <div class="form-group">
+              <select id="s-commute-spread">
+                <option value="random">랜덤 배치</option>
+                <option value="early">주 초반 우선</option>
+                <option value="late">주 후반 우선</option>
+              </select>
+            </div>
+          </div>
+          <hr class="auto-gen-divider" />
+          <div class="auto-gen-section">
+            <div class="auto-gen-section-title">🗓️ 토요일 운행 포함</div>
+            <div class="form-group">
+              <div class="toggle-wrap">
+                <input type="checkbox" id="s-include-sat" />
+                <label for="s-include-sat" class="toggle-label">토요일도 운행 가능</label>
+              </div>
+            </div>
+          </div>
+          <hr class="auto-gen-divider" />
+          <div class="auto-gen-section">
+            <div class="auto-gen-section-title">🔒 패턴 고정</div>
+            <div class="form-group">
+              <div class="toggle-wrap">
+                <input type="checkbox" id="s-fix-seed" checked />
+                <label for="s-fix-seed" class="toggle-label">같은 달 동일 패턴 유지</label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- 거래처 선택 -->
+      <div class="card settings-card-full" style="margin-top:16px;">
+        <div class="client-filter-header">
+          <h3>🏢 운행 거래처 선택</h3>
+          <small class="hint">이 차량으로 방문하는 거래처를 체크하세요. 운행일지 자동생성 시 반영됩니다.</small>
+        </div>
+        <div class="client-category-filter" id="client-cat-filter">
+          <button class="cat-filter-btn active" data-cat="all">전체</button>
+        </div>
+        <div class="client-checkbox-list" id="client-checkbox-list">
+          <p style="color:#9ca3af;font-size:13px;">차량을 선택하면 거래처 목록이 표시됩니다.</p>
+        </div>
+      </div>
+      <div class="form-actions center-actions" style="margin-top:16px;">
+        <button class="btn btn-primary btn-lg" id="btn-save-settings">💾 운행설정 저장</button>
+      </div>
+      <div class="card" style="margin-top:16px;">
+        <h3>📋 현재 설정 요약</h3>
+        <div id="settings-summary-content" class="summary-grid"></div>
+      </div>
+    </div>
+
+    <!-- ── 서브탭 3: 고정비용 ── -->
+    <div id="vmgr-tab-cost" class="sub-tab-section">
+      <div class="card form-card">
+        <h3>💰 연간 고정비용 <small style="font-weight:400;color:#6b7280;font-size:13px;">(비용명세서 추천값 계산에 사용)</small></h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>기준 연도</label>
+            <select id="v-cost-year"></select>
+          </div>
+          <div class="form-group">
+            <label>자동차세 (연간, 원)</label>
+            <input type="number" id="v-cartax" placeholder="예: 420000" min="0" />
+            <small class="hint" id="v-cartax-monthly"></small>
+          </div>
+          <div class="form-group">
+            <label>보험료 (연간, 원)</label>
+            <input type="number" id="v-insurance" placeholder="예: 680000" min="0" />
+            <small class="hint" id="v-insurance-monthly"></small>
+          </div>
+          <div class="form-group">
+            <label>할부이자 (연간, 원)</label>
+            <input type="number" id="v-loan" placeholder="예: 1200000" min="0" />
+            <small class="hint" id="v-loan-monthly"></small>
+          </div>
+          <div class="form-group">
+            <label>수선비 기본 (월, 원)</label>
+            <input type="number" id="v-repair" placeholder="예: 30000" min="0" />
+            <small class="hint">매월 첫 운행일에 추천값 표시</small>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" id="btn-save-cost">💾 고정비용 저장</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 서브탭 4: 추가정보 (운전자/서류) ── -->
+    <div id="vmgr-tab-docs" class="sub-tab-section">
+      <div class="card form-card">
+        <h3>👤 운전자 정보</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>주운전자 1 (성명)</label>
+            <input type="text" id="v-driver1-name" placeholder="예: 홍길동" maxlength="20" />
+          </div>
+          <div class="form-group">
+            <label>운전면허 번호 (운전자1)</label>
+            <input type="text" id="v-driver1-license" placeholder="예: 12-34-567890-12" maxlength="20" />
+          </div>
+          <div class="form-group">
+            <label>운전면허증 사진 (운전자1)</label>
+            <div class="doc-attach-row">
+              <label class="btn btn-secondary btn-sm" style="cursor:pointer;">
+                📁 파일
+                <input type="file" id="v-driver1-license-file" accept="image/*,application/pdf" style="display:none;" />
+              </label>
+              <label class="btn btn-secondary btn-sm" style="cursor:pointer;">
+                📷 촬영
+                <input type="file" id="v-driver1-license-camera" accept="image/*" capture="environment" style="display:none;" />
+              </label>
+              <span id="v-driver1-license-filename" class="doc-filename"></span>
+            </div>
+            <div id="v-driver1-license-preview" class="doc-preview"></div>
+          </div>
+          <div class="form-group">
+            <label>주운전자 2 (성명)</label>
+            <input type="text" id="v-driver2-name" placeholder="예: 김철수" maxlength="20" />
+          </div>
+          <div class="form-group">
+            <label>운전면허 번호 (운전자2)</label>
+            <input type="text" id="v-driver2-license" placeholder="예: 12-34-567890-12" maxlength="20" />
+          </div>
+          <div class="form-group">
+            <label>운전면허증 사진 (운전자2)</label>
+            <div class="doc-attach-row">
+              <label class="btn btn-secondary btn-sm" style="cursor:pointer;">
+                📁 파일
+                <input type="file" id="v-driver2-license-file" accept="image/*,application/pdf" style="display:none;" />
+              </label>
+              <label class="btn btn-secondary btn-sm" style="cursor:pointer;">
+                📷 촬영
+                <input type="file" id="v-driver2-license-camera" accept="image/*" capture="environment" style="display:none;" />
+              </label>
+              <span id="v-driver2-license-filename" class="doc-filename"></span>
+            </div>
+            <div id="v-driver2-license-preview" class="doc-preview"></div>
+          </div>
+        </div>
+        <hr class="vf-divider" />
+        <h3>📄 자동차 등록증</h3>
+        <div class="form-grid">
+          <div class="form-group" style="grid-column:1/-1;">
+            <label>등록증 파일 첨부 (이미지 또는 PDF)</label>
+            <div class="doc-attach-row">
+              <label class="btn btn-secondary" style="cursor:pointer;">
+                📁 파일 선택
+                <input type="file" id="v-regdoc-file" accept="image/*,application/pdf" style="display:none;" />
+              </label>
+              <label class="btn btn-secondary" style="cursor:pointer;">
+                📷 카메라 촬영
+                <input type="file" id="v-regdoc-camera" accept="image/*" capture="environment" style="display:none;" />
+              </label>
+              <span id="v-regdoc-filename" class="doc-filename"></span>
+              <button class="btn btn-danger btn-sm" id="v-regdoc-clear" style="display:none;">✕ 삭제</button>
+            </div>
+            <div id="v-regdoc-preview" class="doc-preview" style="margin-top:8px;"></div>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" id="btn-save-docs">💾 운전자/서류 저장</button>
+        </div>
+      </div>
     </div>
   </section>
 
-  <!-- ==============================
-       TAB 2: 거래처 관리
-  ============================== -->
+  <!-- ====== TAB 2: 거래처 관리 ====== -->
   <section id="tab-client" class="tab-section">
-    <div class="section-header">
-      <h2>🏢 거래처 관리</h2>
-      <button class="btn btn-primary" id="btn-add-client">+ 거래처 등록</button>
-    </div>
 
-    <!-- 거래처 등록/수정 폼 -->
-    <div class="card form-card" id="client-form-card" style="display:none;">
-      <h3 id="client-form-title">거래처 등록</h3>
-      <div class="form-grid">
-        <div class="form-group">
-          <label>거래처명 <span class="required">*</span></label>
-          <input type="text" id="c-name" placeholder="예: 청라감자탕" maxlength="30" />
-        </div>
-        <div class="form-group">
-          <label>왕복거리 (km) <span class="required">*</span></label>
-          <input type="number" id="c-distance" placeholder="예: 25" min="1" max="500" />
-        </div>
-        <div class="form-group">
-          <label>거리 오차범위 (± km)</label>
-          <input type="number" id="c-variance" placeholder="예: 3" min="0" max="50" value="0" />
-          <small class="hint">실제 거리에 ±랜덤 오차를 적용합니다</small>
-        </div>
-        <div class="form-group">
-          <label>월 방문 횟수 <span class="required">*</span></label>
-          <input type="number" id="c-visits" placeholder="예: 4" min="1" max="22" />
-          <small class="hint">월 최대 근무일(약 22일) 이내로 설정</small>
-        </div>
-        <div class="form-group">
-          <label>메모</label>
-          <input type="text" id="c-memo" placeholder="기타 사항" maxlength="50" />
-        </div>
-      </div>
-      <div class="form-actions">
-        <button class="btn btn-primary" id="btn-save-client">💾 저장</button>
-        <button class="btn btn-cancel" id="btn-cancel-client">취소</button>
+    <!-- 거래처 선택 바 -->
+    <div class="vehicle-mgr-header">
+      <div class="vehicle-mgr-select-row">
+        <label class="vmgr-label">🏢 거래처 선택</label>
+        <select id="cmgr-client-select" class="vmgr-vehicle-select">
+          <option value="">-- 거래처를 선택하세요 --</option>
+        </select>
+        <button class="btn btn-primary btn-sm" id="btn-add-client">+ 새 거래처 등록</button>
       </div>
     </div>
 
-    <!-- 거래처 목록 -->
-    <div class="card">
-      <table class="data-table" id="client-table">
-        <thead>
-          <tr>
-            <th>번호</th>
-            <th>거래처명</th>
-            <th>왕복거리(km)</th>
-            <th>오차범위(±km)</th>
-            <th>월 방문횟수</th>
-            <th>메모</th>
-            <th>관리</th>
-          </tr>
-        </thead>
-        <tbody id="client-tbody">
-          <tr><td colspan="7" class="empty-row">등록된 거래처가 없습니다.</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
-
-  <!-- ==============================
-       TAB 3: 운행 설정
-  ============================== -->
-  <section id="tab-settings" class="tab-section">
-    <div class="section-header">
-      <h2>⚙️ 운행 설정</h2>
+    <!-- 서브탭 바 -->
+    <div class="sub-tab-bar" id="cmgr-subtab-bar">
+      <button class="sub-tab-btn active" data-subtab="cmgr-tab-basic">📋 기본정보</button>
+      <button class="sub-tab-btn" data-subtab="cmgr-tab-cost">💰 비용</button>
+      <button class="sub-tab-btn" data-subtab="cmgr-tab-info">🏢 거래처 정보</button>
     </div>
 
-    <div class="settings-grid">
-      <!-- 출퇴근 설정 -->
-      <div class="card settings-card">
-        <h3>🏠 출퇴근 설정</h3>
-        <div class="form-group">
-          <label>출퇴근 왕복거리 (km)</label>
-          <input type="number" id="s-commute-dist" placeholder="예: 22" min="1" max="200" />
-          <small class="hint">집→회사→집 왕복 거리</small>
-        </div>
-        <div class="form-group">
-          <label>거리 오차범위 (± km)</label>
-          <input type="number" id="s-commute-var" placeholder="예: 2" min="0" max="30" value="0" />
-        </div>
-        <div class="form-group">
-          <label>주 출퇴근 횟수</label>
-          <select id="s-commute-days">
-            <option value="1">주 1회</option>
-            <option value="2" selected>주 2회</option>
-            <option value="3">주 3회</option>
-            <option value="4">주 4회</option>
-            <option value="5">주 5회</option>
-          </select>
-          <small class="hint">출퇴근 기록을 넣을 요일 횟수</small>
-        </div>
-      </div>
-
-      <!-- 연간 목표 설정 -->
-      <div class="card settings-card">
-        <h3>📏 연간 주행 목표</h3>
-        <div class="form-group">
-          <label>연간 목표 주행거리 (km)</label>
-          <input type="number" id="s-annual-km" placeholder="예: 7000" min="1000" max="50000" value="7000" />
-          <small class="hint">업무용+출퇴근 합산 연간 목표</small>
-        </div>
-        <div class="form-group">
-          <label>기준 차량</label>
-          <select id="s-vehicle-select">
-            <option value="">-- 차량을 선택하세요 --</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- 운행일지 생성 옵션 -->
-      <div class="card settings-card">
-        <h3>🎲 자동생성 옵션</h3>
-        <div class="form-group">
-          <label>랜덤 시드 고정</label>
-          <div class="toggle-wrap">
-            <input type="checkbox" id="s-fix-seed" />
-            <label for="s-fix-seed" class="toggle-label">같은 달 재생성 시 동일 패턴 유지</label>
+    <!-- ── 서브탭 1: 기본정보 ── -->
+    <div id="cmgr-tab-basic" class="sub-tab-section active">
+      <div class="card form-card">
+        <div class="vmgr-form-header">
+          <h3 id="client-form-title">🏢 거래처 기본 정보</h3>
+          <div class="vmgr-form-actions-top">
+            <button class="btn btn-primary" id="btn-save-client-basic">💾 저장</button>
+            <button class="btn btn-danger btn-sm" id="btn-delete-client" style="display:none;">🗑️ 삭제</button>
           </div>
         </div>
-        <div class="form-group">
-          <label>출퇴근 요일 배치</label>
-          <select id="s-commute-spread">
-            <option value="random">랜덤 배치</option>
-            <option value="early">주 초반 (월,화 우선)</option>
-            <option value="late">주 후반 (목,금 우선)</option>
-          </select>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>거래처명 <span class="required">*</span></label>
+            <input type="text" id="c-name" placeholder="예: 청라감자탕" maxlength="30" />
+          </div>
+          <div class="form-group">
+            <label>구분 <span class="required">*</span></label>
+            <input type="text" id="c-category" placeholder="예: 식당, 관공서, 병원" maxlength="20" list="category-list" />
+            <datalist id="category-list"></datalist>
+            <small class="hint">운행 설정 거래처 필터에 사용</small>
+          </div>
+          <div class="form-group">
+            <label>왕복거리 (km) <span class="required">*</span></label>
+            <input type="number" id="c-distance" placeholder="예: 25" min="1" max="500" />
+          </div>
+          <div class="form-group">
+            <label>거리 오차범위 (± km)</label>
+            <input type="number" id="c-variance" placeholder="예: 3" min="0" max="50" value="0" />
+          </div>
+          <div class="form-group">
+            <label>월 방문 횟수 <span class="required">*</span></label>
+            <input type="number" id="c-visits" placeholder="예: 4" min="1" max="22" />
+          </div>
+          <div class="form-group">
+            <label>메모</label>
+            <input type="text" id="c-memo" placeholder="기타 사항" maxlength="50" />
+          </div>
         </div>
-        <div class="form-group">
-          <label>토요일 운행 포함</label>
-          <div class="toggle-wrap">
-            <input type="checkbox" id="s-include-sat" />
-            <label for="s-include-sat" class="toggle-label">토요일도 운행 가능</label>
+
+        <!-- 거래처 목록 카드 리스트 -->
+        <div id="client-cards-container" style="margin-top:20px;">
+          <div class="empty-row" style="text-align:center;padding:30px;color:#9ca3af;">등록된 거래처가 없습니다.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 서브탭 2: 비용 ── -->
+    <div id="cmgr-tab-cost" class="sub-tab-section">
+      <div class="card form-card">
+        <div class="vmgr-form-header">
+          <h3>💰 방문 비용 정보</h3>
+          <button class="btn btn-primary" id="btn-save-client-cost">💾 저장</button>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>통행료 (편도, 원)</label>
+            <input type="number" id="c-toll" placeholder="예: 1800" min="0" />
+            <small class="hint">방문 시 왕복 자동 반영 (×2)</small>
+          </div>
+          <div class="form-group">
+            <label>주차비 (1회, 원)</label>
+            <input type="number" id="c-parking" placeholder="예: 3000" min="0" />
+            <small class="hint">방문 시 1회 주차비</small>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="form-actions center-actions">
-      <button class="btn btn-primary btn-lg" id="btn-save-settings">💾 설정 저장</button>
-    </div>
+    <!-- ── 서브탭 3: 거래처 정보 ── -->
+    <div id="cmgr-tab-info" class="sub-tab-section">
+      <div class="card form-card">
+        <div class="vmgr-form-header">
+          <h3>🏢 상세 거래처 정보</h3>
+          <button class="btn btn-primary" id="btn-save-client-info">💾 저장</button>
+        </div>
 
-    <!-- 현재 설정 요약 -->
-    <div class="card" id="settings-summary" style="margin-top:20px;">
-      <h3>📋 현재 설정 요약</h3>
-      <div id="settings-summary-content" class="summary-grid">
-        <p class="empty-row">설정을 입력하고 저장해주세요.</p>
+        <!-- 거래처 상세 정보 -->
+        <h4 class="vf-section-title">🏷️ 거래처 연락처</h4>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>사업자번호</label>
+            <input type="text" id="c-biz-no" placeholder="예: 123-45-67890" maxlength="20" />
+          </div>
+          <div class="form-group">
+            <label>담당자 성명</label>
+            <input type="text" id="c-manager" placeholder="예: 김대표" maxlength="30" />
+          </div>
+          <div class="form-group">
+            <label>전화번호</label>
+            <input type="tel" id="c-phone" placeholder="예: 032-123-4567" maxlength="30" />
+          </div>
+          <div class="form-group">
+            <label>이메일</label>
+            <input type="email" id="c-email" placeholder="예: contact@example.com" maxlength="100" />
+          </div>
+          <div class="form-group" style="grid-column:1/-1;">
+            <label>주소</label>
+            <input type="text" id="c-address" placeholder="예: 인천시 서구 청라동 123" maxlength="200" />
+          </div>
+        </div>
+
+        <hr class="vf-divider" />
+
+        <!-- 서류 첨부 -->
+        <h4 class="vf-section-title">📄 서류 첨부 / 촬영</h4>
+        <small class="hint" style="display:block;margin-bottom:12px;">이미지 또는 PDF 파일을 첨부하거나 카메라로 직접 촬영할 수 있습니다.</small>
+        <div class="client-doc-grid">
+          <!-- 사업자등록증 -->
+          <div class="client-doc-item">
+            <label class="form-label">🏢 사업자등록증</label>
+            <div class="doc-attach-row">
+              <label class="btn btn-secondary btn-sm" style="cursor:pointer;">
+                📁 파일 선택
+                <input type="file" id="c-biz-cert-file" accept="image/*,application/pdf" style="display:none;" />
+              </label>
+              <label class="btn btn-secondary btn-sm" style="cursor:pointer;">
+                📷 카메라 촬영
+                <input type="file" id="c-biz-cert-camera" accept="image/*" capture="environment" style="display:none;" />
+              </label>
+              <button class="btn btn-danger btn-sm" id="c-biz-cert-clear" style="display:none;">✕ 삭제</button>
+            </div>
+            <span id="c-biz-cert-filename" class="doc-filename" style="font-size:11px;color:#6b7280;display:block;margin-top:4px;"></span>
+            <div id="c-biz-cert-preview" class="doc-preview" style="margin-top:8px;"></div>
+          </div>
+
+          <!-- 계약서 -->
+          <div class="client-doc-item">
+            <label class="form-label">📝 계약서 / 거래명세서</label>
+            <div class="doc-attach-row">
+              <label class="btn btn-secondary btn-sm" style="cursor:pointer;">
+                📁 파일 선택
+                <input type="file" id="c-contract-file" accept="image/*,application/pdf" style="display:none;" />
+              </label>
+              <label class="btn btn-secondary btn-sm" style="cursor:pointer;">
+                📷 카메라 촬영
+                <input type="file" id="c-contract-camera" accept="image/*" capture="environment" style="display:none;" />
+              </label>
+              <button class="btn btn-danger btn-sm" id="c-contract-clear" style="display:none;">✕ 삭제</button>
+            </div>
+            <span id="c-contract-filename" class="doc-filename" style="font-size:11px;color:#6b7280;display:block;margin-top:4px;"></span>
+            <div id="c-contract-preview" class="doc-preview" style="margin-top:8px;"></div>
+          </div>
+
+          <!-- 기타 서류 -->
+          <div class="client-doc-item">
+            <label class="form-label">📎 기타 서류</label>
+            <div class="doc-attach-row">
+              <label class="btn btn-secondary btn-sm" style="cursor:pointer;">
+                📁 파일 선택
+                <input type="file" id="c-etc-file" accept="image/*,application/pdf" style="display:none;" />
+              </label>
+              <label class="btn btn-secondary btn-sm" style="cursor:pointer;">
+                📷 카메라 촬영
+                <input type="file" id="c-etc-camera" accept="image/*" capture="environment" style="display:none;" />
+              </label>
+              <button class="btn btn-danger btn-sm" id="c-etc-clear" style="display:none;">✕ 삭제</button>
+            </div>
+            <span id="c-etc-filename" class="doc-filename" style="font-size:11px;color:#6b7280;display:block;margin-top:4px;"></span>
+            <div id="c-etc-preview" class="doc-preview" style="margin-top:8px;"></div>
+          </div>
+        </div>
       </div>
     </div>
+
   </section>
 
-  <!-- ==============================
-       TAB 4: 운행일지 작성
-  ============================== -->
+
+  <!-- ====== TAB 3: 운행일지 ====== -->
   <section id="tab-logbook" class="tab-section">
-    <div class="section-header">
-      <h2>📅 운행일지 작성</h2>
+    <div class="section-header"><h2>📅 운행일지 작성</h2></div>
+    <div class="sub-tab-bar">
+      <button class="sub-tab-btn active" data-subtab="subtab-bulk">📋 연간 일괄 생성</button>
+      <button class="sub-tab-btn" data-subtab="subtab-single">📄 단월 작성</button>
     </div>
 
-    <!-- 월 선택 및 생성 컨트롤 -->
-    <div class="card control-card">
-      <div class="control-row">
+    <!-- 연간 일괄 (디폴트) -->
+    <div id="subtab-bulk" class="sub-tab-section active">
+      <div class="card bulk-card">
+        <h3>📋 1~12월 연간 일괄 자동생성</h3>
+        <p class="bulk-desc">1월부터 12월까지 운행일지를 한번에 생성합니다. 각 월은 자동 이월됩니다.</p>
+        <div class="form-grid" style="max-width:600px;">
+          <div class="form-group">
+            <label>차량 <span class="required">*</span></label>
+            <select id="lb-bulk-vehicle"><option value="">-- 차량 선택 --</option></select>
+          </div>
+          <div class="form-group">
+            <label>년도 <span class="required">*</span></label>
+            <select id="lb-bulk-year"></select>
+          </div>
+          <div class="form-group">
+            <label>1월 시작 누적거리 (km) <span class="required">*</span></label>
+            <input type="number" id="lb-bulk-odo" placeholder="예: 34576" min="0" />
+            <small class="hint" style="font-size:10px;">※ 차량 선택 시 등록된 누적거리 자동 입력</small>
+          </div>
+        </div>
+        <div class="form-actions" style="margin-top:16px;">
+          <button class="btn btn-success btn-lg" id="btn-bulk-generate">🎲 1~12월 일괄 생성 &amp; 저장</button>
+        </div>
+        <div class="bulk-result" id="bulk-result" style="display:none;">
+          <div class="generate-info"><span id="bulk-result-text"></span></div>
+          <div class="bulk-action-row">
+            <button class="btn btn-excel btn-lg" id="btn-bulk-export">📥 연간 엑셀 다운로드</button>
+          </div>
+        </div>
+        <div id="bulk-preview" style="margin-top:20px;display:none;">
+          <h4 style="margin-bottom:10px;color:#1a4fa0;">📊 연간 요약</h4>
+          <table class="data-table" id="bulk-preview-table">
+            <thead>
+              <tr><th>월</th><th>시작(km)</th><th>종료(km)</th><th>총주행(km)</th><th>출퇴근(km)</th><th>업무용(km)</th><th>업무비율</th></tr>
+            </thead>
+            <tbody id="bulk-preview-tbody"></tbody>
+            <tfoot id="bulk-preview-tfoot"></tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 단월 -->
+    <div id="subtab-single" class="sub-tab-section">
+      <div class="card control-card">
+        <div class="control-row">
+          <div class="form-group inline">
+            <label>차량</label>
+            <select id="lb-vehicle-select"><option value="">-- 선택 --</option></select>
+          </div>
+          <div class="form-group inline">
+            <label>년도</label><select id="lb-year"></select>
+          </div>
+          <div class="form-group inline">
+            <label>월</label>
+            <select id="lb-month">
+              <option value="1">1월</option><option value="2">2월</option><option value="3">3월</option>
+              <option value="4">4월</option><option value="5">5월</option><option value="6">6월</option>
+              <option value="7">7월</option><option value="8">8월</option><option value="9">9월</option>
+              <option value="10">10월</option><option value="11">11월</option><option value="12">12월</option>
+            </select>
+          </div>
+          <div class="form-group inline">
+            <label>시작 누적거리 (km)</label>
+            <input type="number" id="lb-start-odo" placeholder="예: 34576" min="0" />
+            <small class="hint" style="font-size:10px;">※ 차량 선택 시 자동 입력 / 이전달 저장 시 자동 이월</small>
+          </div>
+          <button class="btn btn-success btn-lg" id="btn-generate-log">🎲 자동 생성</button>
+          <button class="btn btn-secondary" id="btn-clear-log">🗑️ 초기화</button>
+        </div>
+        <div class="generate-info" id="generate-info" style="display:none;">
+          <span id="generate-info-text"></span>
+        </div>
+      </div>
+      <div class="legend-bar">
+        <span class="legend-item legend-red">■ 일요일/공휴일</span>
+        <span class="legend-item legend-sat">■ 토요일</span>
+        <span class="legend-item legend-com">■ 출퇴근</span>
+        <span class="legend-item legend-biz">■ 업무용</span>
+      </div>
+      <div class="card table-card">
+        <div class="table-scroll">
+          <table class="logbook-table">
+            <thead>
+              <tr class="header-row-1">
+                <th rowspan="2">일자</th><th rowspan="2">(요일)</th>
+                <th colspan="3">운 행 내 역</th>
+                <th colspan="2">사용 거리 (km)</th>
+                <th rowspan="2">비 고</th>
+              </tr>
+              <tr class="header-row-2">
+                <th>주행전(km)</th><th>주행후(km)</th><th>주행거리(km)</th>
+                <th>출퇴근(km)</th><th>업무용(km)</th>
+              </tr>
+            </thead>
+            <tbody id="logbook-tbody">
+              <tr><td colspan="8" class="empty-row">차량과 월을 선택 후 자동 생성을 눌러주세요.</td></tr>
+            </tbody>
+            <tfoot id="logbook-tfoot"></tfoot>
+          </table>
+        </div>
+      </div>
+      <div class="form-actions center-actions" id="logbook-save-area" style="display:none;">
+        <button class="btn btn-primary btn-lg" id="btn-save-log">💾 DB 저장</button>
+        <button class="btn btn-pdf btn-lg" id="btn-log-pdf">🖨️ PDF 출력</button>
+        <span class="save-hint">저장 후 엑셀 출력 탭에서 연간 일괄 다운로드 가능</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== TAB 5: 비용 명세서 (연간 전체) ====== -->
+  <section id="tab-cost" class="tab-section">
+    <div class="section-header">
+      <h2>💰 비용 명세서 (연간)</h2>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-primary btn-lg" id="btn-cost-load">📂 불러오기 / 새로고침</button>
+        <button class="btn btn-success" id="btn-cost-save">💾 저장</button>
+        <button class="btn btn-excel"   id="btn-cost-excel">📥 엑셀</button>
+        <button class="btn btn-pdf"     id="btn-cost-pdf">🖨️ PDF</button>
+      </div>
+    </div>
+
+    <!-- 컨트롤 바 -->
+    <div class="card control-card" style="padding:14px 20px;">
+      <div class="control-row" style="align-items:flex-end;gap:14px;flex-wrap:wrap;">
         <div class="form-group inline">
-          <label>차량 선택</label>
-          <select id="lb-vehicle-select">
-            <option value="">-- 차량 선택 --</option>
-          </select>
+          <label>차량</label>
+          <select id="cost-vehicle"><option value="">-- 선택 --</option></select>
         </div>
         <div class="form-group inline">
           <label>년도</label>
-          <select id="lb-year"></select>
+          <select id="cost-year"></select>
         </div>
-        <div class="form-group inline">
-          <label>월</label>
-          <select id="lb-month">
-            <option value="1">1월</option><option value="2">2월</option>
-            <option value="3">3월</option><option value="4">4월</option>
-            <option value="5">5월</option><option value="6">6월</option>
-            <option value="7">7월</option><option value="8">8월</option>
-            <option value="9">9월</option><option value="10">10월</option>
-            <option value="11">11월</option><option value="12">12월</option>
-          </select>
+        <div class="cost-legend-inline">
+          <span class="cl2 cl2-recommend">■ 추천값(회색)</span>
+          <span class="cl2 cl2-entered">■ 입력값</span>
+          <span class="cl2 cl2-fuel">■ 주유</span>
+          <span class="cl2 cl2-com">■ 출퇴근</span>
+          <span class="cl2 cl2-biz">■ 업무</span>
+          <small style="color:#6b7280;">Tab키로 추천값 입력 확정</small>
         </div>
-        <div class="form-group inline">
-          <label>시작 누적거리 (km)</label>
-          <input type="number" id="lb-start-odo" placeholder="예: 34576" min="0" />
-        </div>
-        <button class="btn btn-success btn-lg" id="btn-generate-log">🎲 자동 생성</button>
-        <button class="btn btn-secondary" id="btn-clear-log">🗑️ 초기화</button>
+        <small style="color:#6b7280;font-size:12px;">💡 고정비용(세금·보험·할부이자)은 차량 관리 탭에서 설정</small>
       </div>
-      <div class="generate-info" id="generate-info" style="display:none;">
-        <span id="generate-info-text"></span>
+      <!-- 주유 관리 패널 -->
+      <div id="fuel-panel" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid #c3d5f0;">
+        <h4 style="color:#1a4fa0;margin-bottom:10px;font-size:14px;">⛽ 주유 기록 &amp; 다음 주유 예측</h4>
+        <div id="fuel-panel-body"></div>
       </div>
     </div>
 
-    <!-- 운행일지 테이블 -->
-    <div class="card table-card">
-      <div class="table-scroll">
-        <table class="logbook-table" id="logbook-table">
+    <!-- 연간 비용 테이블 (1~12월 모두) -->
+    <div id="cost-print-area">
+      <div class="card cost-header-card" id="cost-doc-header" style="display:none;">
+        <div class="cost-title-bar">
+          <h2 id="cost-doc-title">(주)이든푸드 업무용 승용차 비용 명세서</h2>
+          <span id="cost-doc-meta"></span>
+        </div>
+      </div>
+      <div id="cost-months-container">
+        <!-- JS가 1~12월 테이블을 여기에 렌더링 -->
+        <div class="empty-cost-msg card" style="text-align:center;padding:40px;color:#9ca3af;">
+          차량과 연도를 선택한 후 <strong>"📂 불러오기"</strong>를 눌러주세요.
+        </div>
+      </div>
+    </div>
+
+    <!-- 영수증 모달 트리거 숨김 input -->
+    <input type="file" id="receipt-file-input" accept="image/*" capture="environment" style="display:none;" multiple />
+  </section>
+
+  <!-- ====== TAB 6: 엑셀 출력 ====== -->
+  <section id="tab-export" class="tab-section">
+    <div class="section-header"><h2>📊 엑셀 출력</h2></div>
+
+    <!-- 운행일지 -->
+    <div class="card export-section-card">
+      <div class="export-section-header">
+        <span class="export-section-icon">📅</span>
+        <div>
+          <h3>운행기록부 엑셀 다운로드</h3>
+          <p class="export-section-desc">연간종합 + 1~12월 시트 | 법정공휴일/토/일 색상 | 누적거리 이월</p>
+        </div>
+      </div>
+      <!-- hidden selects used by renderSavedList() -->
+      <select id="exp-vehicle" style="display:none;"><option value="all">전체 차량</option></select>
+      <select id="exp-year" style="display:none;"></select>
+      <div class="export-saved-log">
+        <h4 style="margin-bottom:10px;color:#374151;font-size:13px;font-weight:600;">📂 저장된 운행일지 목록 <span style="font-weight:400;color:#6b7280;font-size:11px;">(각 행의 📥 엑셀 다운로드 버튼을 눌러 다운로드하세요)</span></h4>
+        <table class="data-table">
           <thead>
-            <tr class="header-row-1">
-              <th rowspan="2">일자</th>
-              <th rowspan="2">(요일)</th>
-              <th colspan="3">운 행 내 역</th>
-              <th colspan="2">사용 거리</th>
-              <th rowspan="2">비 고</th>
-            </tr>
-            <tr class="header-row-2">
-              <th>주행전(km)</th>
-              <th>주행후(km)</th>
-              <th>주행거리(km)</th>
-              <th>출퇴근(km)</th>
-              <th>업무용(km)</th>
-            </tr>
+            <tr><th>차량</th><th>년도</th><th>저장 월</th><th>총주행(km)</th><th>업무용(km)</th><th>업무비율</th><th>저장일</th><th>관리</th></tr>
           </thead>
-          <tbody id="logbook-tbody">
-            <tr><td colspan="8" class="empty-row">먼저 차량과 월을 선택한 후 자동 생성을 눌러주세요.</td></tr>
+          <tbody id="saved-log-tbody">
+            <tr><td colspan="8" class="empty-row">저장된 운행일지가 없습니다.</td></tr>
           </tbody>
-          <tfoot id="logbook-tfoot"></tfoot>
         </table>
       </div>
     </div>
 
-    <!-- 저장 버튼 -->
-    <div class="form-actions center-actions" id="logbook-save-area" style="display:none;">
-      <button class="btn btn-primary btn-lg" id="btn-save-log">💾 일지 저장 (DB)</button>
-      <span class="save-hint">저장된 일지는 엑셀 출력 탭에서 다운로드할 수 있습니다</span>
-    </div>
-  </section>
-
-  <!-- ==============================
-       TAB 5: 엑셀 출력
-  ============================== -->
-  <section id="tab-export" class="tab-section">
-    <div class="section-header">
-      <h2>📊 엑셀 출력</h2>
-    </div>
-
-    <!-- 저장된 일지 목록 -->
-    <div class="card">
-      <h3>📂 저장된 운행일지 목록</h3>
-      <table class="data-table" id="saved-log-table">
-        <thead>
-          <tr>
-            <th>차량번호</th>
-            <th>기간</th>
-            <th>총주행(km)</th>
-            <th>출퇴근(km)</th>
-            <th>업무용(km)</th>
-            <th>작성일시</th>
-            <th>관리</th>
-          </tr>
-        </thead>
-        <tbody id="saved-log-tbody">
-          <tr><td colspan="7" class="empty-row">저장된 운행일지가 없습니다.</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- 일괄 출력 -->
-    <div class="card">
-      <h3>📥 일괄 엑셀 다운로드</h3>
-      <div class="export-options">
-        <div class="form-group inline">
-          <label>차량 선택</label>
-          <select id="exp-vehicle">
-            <option value="all">전체 차량</option>
-          </select>
+    <!-- 비용 명세서 -->
+    <div class="card export-section-card">
+      <div class="export-section-header">
+        <span class="export-section-icon">💰</span>
+        <div>
+          <h3>비용명세서 엑셀 다운로드</h3>
+          <p class="export-section-desc">연간종합비용 + 1~12월 비용 시트 | 추천값 회색이탤릭 | 항목별 색상 | 천단위 콤마</p>
         </div>
-        <div class="form-group inline">
-          <label>년도</label>
-          <select id="exp-year"></select>
+      </div>
+      <div class="export-option-row">
+        <div class="form-group inline"><label>차량</label>
+          <select id="exp-cost-vehicle"><option value="all">전체 차량</option></select>
         </div>
-        <button class="btn btn-excel btn-lg" id="btn-export-all">
-          📥 엑셀 다운로드
-        </button>
+        <div class="form-group inline"><label>년도</label>
+          <select id="exp-cost-year"></select>
+        </div>
+        <button class="btn btn-excel btn-lg" id="btn-export-cost">📥 비용명세서 엑셀 다운로드</button>
+      </div>
+    </div>
+
+    <!-- 색상 안내 -->
+    <div class="card excel-info-card">
+      <h3>🎨 엑셀 색상 안내</h3>
+      <div class="excel-color-guide">
+        <div class="ecg-section">
+          <strong>운행기록부</strong>
+          <div class="color-legend">
+            <span class="cl-item cl-red">일요일·공휴일</span>
+            <span class="cl-item cl-sat">토요일</span>
+            <span class="cl-item cl-com">출퇴근</span>
+            <span class="cl-item cl-biz">업무용</span>
+            <span class="cl-item cl-sum">합계행</span>
+          </div>
+        </div>
+        <div class="ecg-section">
+          <strong>비용명세서</strong>
+          <div class="color-legend">
+            <span class="cl-item" style="background:#e8f0fc;color:#1a4fa0;border:1px solid #93b4e8;">유류비</span>
+            <span class="cl-item" style="background:#f3e8ff;color:#7c3aed;border:1px solid #d8b4fe;">수선비</span>
+            <span class="cl-item" style="background:#fee2e2;color:#dc2626;border:1px solid #fca5a5;">자동차세</span>
+            <span class="cl-item" style="background:#fce7f3;color:#c026a1;border:1px solid #f9a8d4;">보험료</span>
+            <span class="cl-item" style="background:#e0f2fe;color:#0369a1;border:1px solid #7dd3fc;">주차·통행료</span>
+            <span class="cl-item" style="background:#fef3c7;color:#b45309;border:1px solid #fcd34d;">할부이자</span>
+            <span class="cl-item" style="background:#f3f4f6;color:#9ca3af;border:1px solid #e5e7eb;font-style:italic;">추천값(미입력)</span>
+          </div>
+        </div>
       </div>
     </div>
   </section>
 
 </main>
 
-<!-- ===== MODAL ===== -->
+<!-- README 모달 -->
+<div class="modal-overlay" id="readme-modal" style="display:none;">
+  <div class="modal-box readme-modal-box">
+    <div class="modal-header" style="background:linear-gradient(135deg,#1a4fa0,#2563c7);">
+      <h3>📖 버전 정보 &amp; 매뉴얼</h3>
+      <button class="modal-close" id="readme-modal-close">✕</button>
+    </div>
+    <div class="modal-body readme-modal-body" id="readme-modal-body">
+      <!-- JS가 README.md 내용을 렌더링 -->
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" id="readme-modal-ok">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
 <div class="modal-overlay" id="modal-overlay" style="display:none;">
-  <div class="modal-box" id="modal-box">
+  <div class="modal-box">
     <div class="modal-header">
       <h3 id="modal-title">확인</h3>
       <button class="modal-close" id="modal-close">✕</button>
@@ -388,22 +791,69 @@
     <div class="modal-body" id="modal-body"></div>
     <div class="modal-footer">
       <button class="btn btn-primary" id="modal-confirm">확인</button>
-      <button class="btn btn-cancel" id="modal-cancel" style="display:none;">취소</button>
+      <button class="btn btn-cancel"  id="modal-cancel"  style="display:none;">취소</button>
     </div>
   </div>
 </div>
 
-<!-- ===== TOAST ===== -->
+<!-- 로딩 모달 -->
+<div class="modal-overlay" id="loading-modal" style="display:none;">
+  <div class="loading-box">
+    <div class="loading-spinner"></div>
+    <p class="loading-text" id="loading-text">잠시만 기다려 주세요...</p>
+    <p class="loading-sub-text" id="loading-sub-text"></p>
+    <div class="loading-progress-wrap" id="loading-progress-wrap" style="display:none;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="loading-progress-track" style="flex:1;">
+          <div class="loading-progress-bar" id="loading-progress-bar"></div>
+        </div>
+        <span class="loading-progress-pct" id="loading-progress-pct">0%</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 영수증 모달 -->
+<div class="modal-overlay" id="receipt-modal" style="display:none;">
+  <div class="modal-box" style="width:520px;max-width:96vw;">
+    <div class="modal-header" style="background:#16a34a;">
+      <h3 id="receipt-modal-title">📎 영수증 첨부</h3>
+      <button class="modal-close" id="receipt-modal-close">✕</button>
+    </div>
+    <div class="modal-body" style="padding:16px;">
+      <div id="receipt-preview-list" style="display:flex;flex-wrap:wrap;gap:10px;min-height:80px;margin-bottom:12px;"></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <label class="btn btn-success" style="cursor:pointer;">
+          📁 파일 선택
+          <input type="file" id="receipt-upload-file" accept="image/*,application/pdf" multiple style="display:none;" />
+        </label>
+        <label class="btn btn-secondary" style="cursor:pointer;">
+          📷 카메라 촬영
+          <input type="file" id="receipt-camera" accept="image/*" capture="environment" style="display:none;" />
+        </label>
+      </div>
+      <small style="color:#6b7280;display:block;margin-top:8px;">이미지(JPG/PNG/WEBP)·PDF 첨부 가능 | 브라우저 LocalStorage 저장</small>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" id="receipt-modal-save">💾 저장</button>
+      <button class="btn btn-cancel"  id="receipt-modal-cancel">취소</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
-<!-- JS -->
+<script src="js/holidays.js"></script>
 <script src="js/db.js"></script>
 <script src="js/vehicle.js"></script>
 <script src="js/client.js"></script>
 <script src="js/settings.js"></script>
 <script src="js/logbook.js"></script>
 <script src="js/export.js"></script>
+<script src="js/costledger.js"></script>
+<script src="js/costexport.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/numformat.js"></script>
 <script src="js/app.js"></script>
-
 </body>
 </html>

@@ -1,0 +1,16 @@
+# 환경변수 (DB 비밀번호 등) - 절대 GitHub에 올리지 않음
+.env
+.env.*
+!.env.example
+
+# Node.js
+node_modules/
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 로그
+*.log
+logs/

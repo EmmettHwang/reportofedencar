@@ -1,132 +1,175 @@
 /* =====================================================
-   db.js - LocalStorage 기반 데이터 저장소
+   db.js v3 - REST API 기반 (MariaDB 백엔드)
+   LocalStorage 완전 제거 → /api/* 호출
    ===================================================== */
 
 const DB = (() => {
-  const KEYS = {
-    vehicles:  'driveLog_vehicles',
-    clients:   'driveLog_clients',
-    settings:  'driveLog_settings',
-    logs:      'driveLog_logs',      // { [vehicleId_YYYYMM]: rows[] }
-  };
 
-  // ---- 기본 CRUD 헬퍼 ----
-  function load(key) {
-    try { return JSON.parse(localStorage.getItem(key)) || []; }
-    catch { return []; }
+  /* ─── 공통 fetch 래퍼 ─── */
+  async function api(method, url, body) {
+    const opt = {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+    };
+    if (body !== undefined) opt.body = JSON.stringify(body);
+    const res = await fetch(url, opt);
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error || 'API Error');
+    return json.data;
   }
-  function loadObj(key, def = {}) {
-    try { return JSON.parse(localStorage.getItem(key)) || def; }
-    catch { return def; }
-  }
-  function save(key, data) {
-    localStorage.setItem(key, JSON.stringify(data));
-  }
-  function genId() {
-    return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-  }
+  const GET    = url       => api('GET',    url);
+  const POST   = (url, b)  => api('POST',   url, b);
+  const PUT    = (url, b)  => api('PUT',    url, b);
+  const DELETE = url       => api('DELETE', url);
 
-  // ---- 차량 ----
+  function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+  /* ─────────────────────────────────────────
+     Vehicles
+  ───────────────────────────────────────── */
   const Vehicles = {
-    getAll: () => load(KEYS.vehicles),
-    getById: (id) => load(KEYS.vehicles).find(v => v.id === id) || null,
-    add(data) {
-      const list = load(KEYS.vehicles);
-      const item = { id: genId(), ...data, createdAt: new Date().toISOString() };
-      list.push(item);
-      save(KEYS.vehicles, list);
-      return item;
+    async getAll()      { return await GET('/api/vehicles'); },
+    async getById(id)   { try { return await GET(`/api/vehicles/${id}`); } catch { return null; } },
+    async add(data)     { return await POST('/api/vehicles', { id: genId(), ...data }); },
+    async update(id, d) { await PUT(`/api/vehicles/${id}`, d); return { id, ...d }; },
+    async delete(id)    { await DELETE(`/api/vehicles/${id}`); },
+
+    /* 서류 */
+    async saveDoc(vehicleId, docType, fileObj) {
+      await POST(`/api/vehicles/${vehicleId}/docs/${docType}`, fileObj);
     },
-    update(id, data) {
-      const list = load(KEYS.vehicles).map(v => v.id === id ? { ...v, ...data } : v);
-      save(KEYS.vehicles, list);
+    async getDoc(vehicleId, docType) {
+      try { return await GET(`/api/vehicles/${vehicleId}/docs/${docType}`); } catch { return null; }
     },
-    delete(id) {
-      save(KEYS.vehicles, load(KEYS.vehicles).filter(v => v.id !== id));
-    }
+    async deleteDoc(vehicleId, docType) {
+      try { await DELETE(`/api/vehicles/${vehicleId}/docs/${docType}`); } catch {}
+    },
   };
 
-  // ---- 거래처 ----
+  /* ─────────────────────────────────────────
+     Clients
+  ───────────────────────────────────────── */
   const Clients = {
-    getAll: () => load(KEYS.clients),
-    getById: (id) => load(KEYS.clients).find(c => c.id === id) || null,
-    add(data) {
-      const list = load(KEYS.clients);
-      const item = { id: genId(), ...data, createdAt: new Date().toISOString() };
-      list.push(item);
-      save(KEYS.clients, list);
-      return item;
+    async getAll()      { return await GET('/api/clients'); },
+    async getById(id)   { try { return await GET(`/api/clients/${id}`); } catch { return null; } },
+    async add(data)     { return await POST('/api/clients', { id: genId(), ...data }); },
+    async update(id, d) { await PUT(`/api/clients/${id}`, d); return { id, ...d }; },
+    async delete(id)    { await DELETE(`/api/clients/${id}`); },
+
+    /* 거래처 서류 */
+    async saveDoc(clientId, docType, fileObj) {
+      await POST(`/api/clients/${clientId}/docs/${docType}`, fileObj);
     },
-    update(id, data) {
-      const list = load(KEYS.clients).map(c => c.id === id ? { ...c, ...data } : c);
-      save(KEYS.clients, list);
+    async getDoc(clientId, docType) {
+      try { return await GET(`/api/clients/${clientId}/docs/${docType}`); } catch { return null; }
     },
-    delete(id) {
-      save(KEYS.clients, load(KEYS.clients).filter(c => c.id !== id));
-    }
+    async deleteDoc(clientId, docType) {
+      try { await DELETE(`/api/clients/${clientId}/docs/${docType}`); } catch {}
+    },
   };
 
-  // ---- 설정 ----
+  /* ─────────────────────────────────────────
+     Settings (차량별)
+  ───────────────────────────────────────── */
   const Settings = {
-    get: () => loadObj(KEYS.settings, {
-      commuteDist: 22,
-      commuteVariance: 2,
-      commuteDaysPerWeek: 2,
-      annualKm: 7000,
-      vehicleId: '',
-      fixSeed: false,
-      commuteSpread: 'random',
-      includeSat: false
-    }),
-    save: (data) => save(KEYS.settings, data)
+    _default() {
+      return {
+        commuteDist: 22, commuteVariance: 2, commuteDaysPerWeek: 2,
+        annualKm: 7000, fixSeed: true, commuteSpread: 'random',
+        includeSat: false, commuteToll: 0, selectedClientIds: []
+      };
+    },
+    async get(vehicleId) {
+      if (!vehicleId) return this._default();
+      try {
+        const s = await GET(`/api/settings/${vehicleId}`);
+        return s || this._default();
+      } catch { return this._default(); }
+    },
+    async save(vehicleId, data) {
+      if (!vehicleId) return;
+      await POST(`/api/settings/${vehicleId}`, data);
+    },
   };
 
-  // ---- 운행 로그 ----
+  /* ─────────────────────────────────────────
+     Logs
+  ───────────────────────────────────────── */
   const Logs = {
-    _key: (vehicleId, year, month) => `${KEYS.logs}_${vehicleId}_${year}_${String(month).padStart(2,'0')}`,
+    async save(vehicleId, year, month, rows, meta = {}) {
+      await POST(`/api/logs/${vehicleId}/${year}/${month}`, { rows, ...meta });
+    },
+    async get(vehicleId, year, month) {
+      try { return await GET(`/api/logs/${vehicleId}/${year}/${month}`); } catch { return null; }
+    },
+    async getAllIndex() {
+      try { return await GET('/api/logs/index'); } catch { return []; }
+    },
+    async getYearIndex(vehicleId, year) {
+      try { return await GET(`/api/logs/index/${vehicleId}/${year}`); } catch { return []; }
+    },
+    async delete(vehicleId, year, month) {
+      try { await DELETE(`/api/logs/${vehicleId}/${year}/${month}`); } catch {}
+    },
+  };
 
-    save(vehicleId, year, month, rows, meta = {}) {
-      const key = this._key(vehicleId, year, month);
-      const data = {
-        vehicleId, year, month, rows,
-        savedAt: new Date().toISOString(),
-        ...meta
-      };
-      localStorage.setItem(key, JSON.stringify(data));
-      // 인덱스 갱신
-      const idx = loadObj(KEYS.logs + '_index', []);
-      const idxKey = `${vehicleId}_${year}_${String(month).padStart(2,'0')}`;
-      const exists = idx.findIndex(i => i.key === idxKey);
-      const summary = {
-        key: idxKey,
-        vehicleId, year, month,
-        totalKm:    rows.reduce((s,r) => s + (Number(r.driven) || 0), 0),
-        commuteKm:  rows.reduce((s,r) => s + (Number(r.commute) || 0), 0),
-        bizKm:      rows.reduce((s,r) => s + (Number(r.biz) || 0), 0),
-        savedAt:    data.savedAt,
-        ...meta
-      };
-      if (exists >= 0) idx[exists] = summary;
-      else idx.push(summary);
-      save(KEYS.logs + '_index', idx);
+  /* ─────────────────────────────────────────
+     CostData
+  ───────────────────────────────────────── */
+  const CostData = {
+    async save(vehicleId, year, data) {
+      await POST(`/api/costdata/${vehicleId}/${year}`, { data });
+    },
+    async get(vehicleId, year) {
+      try { return await GET(`/api/costdata/${vehicleId}/${year}`); } catch { return null; }
     },
 
-    get(vehicleId, year, month) {
-      const key = this._key(vehicleId, year, month);
-      try { return JSON.parse(localStorage.getItem(key)) || null; }
+    /* 연간 고정비 */
+    async saveAnnual(vehicleId, year, data) {
+      await POST(`/api/annual-costs/${vehicleId}/${year}`, data);
+    },
+    async getAnnual(vehicleId, year) {
+      try { return await GET(`/api/annual-costs/${vehicleId}/${year}`); }
+      catch { return { carTax:0, insurance:0, loanInterest:0, repairMonthly:0 }; }
+    },
+
+    /* 주유 기록 - costData.data 내에 포함 (별도 API 불필요) */
+    async saveFuelLog(vehicleId, year, month, logs) {
+      const cd = await this.get(vehicleId, year) || { data: {} };
+      if (!cd.data) cd.data = {};
+      if (!cd.data[month]) cd.data[month] = {};
+      cd.data[month].fuelLogs = logs;
+      await this.save(vehicleId, year, cd.data);
+    },
+    async getFuelLogs(vehicleId, year, month) {
+      try {
+        const cd = await this.get(vehicleId, year);
+        return (cd?.data?.[month]?.fuelLogs) || [];
+      } catch { return []; }
+    },
+
+    /* 영수증 */
+    async saveReceipt(vehicleId, year, month, rowKey, fileObj) {
+      await POST(`/api/receipts/${vehicleId}/${year}/${month}/${rowKey}`, fileObj);
+    },
+    async getReceipt(vehicleId, year, month, rowKey) {
+      try { return await GET(`/api/receipts/${vehicleId}/${year}/${month}/${rowKey}`); }
       catch { return null; }
     },
-
-    getAllIndex: () => loadObj(KEYS.logs + '_index', []),
-
-    delete(vehicleId, year, month) {
-      const key = this._key(vehicleId, year, month);
-      localStorage.removeItem(key);
-      const idxKey = `${vehicleId}_${year}_${String(month).padStart(2,'0')}`;
-      const idx = loadObj(KEYS.logs + '_index', []).filter(i => i.key !== idxKey);
-      save(KEYS.logs + '_index', idx);
-    }
+    async deleteReceipt(vehicleId, year, month, rowKey) {
+      try { await DELETE(`/api/receipts/${vehicleId}/${year}/${month}/${rowKey}`); } catch {}
+    },
   };
 
-  return { Vehicles, Clients, Settings, Logs };
+  /* ─────────────────────────────────────────
+     헬스 체크 (앱 시작 시 DB 연결 확인)
+  ───────────────────────────────────────── */
+  async function checkHealth() {
+    try {
+      await GET('/api/health');
+      return true;
+    } catch { return false; }
+  }
+
+  return { Vehicles, Clients, Settings, Logs, CostData, checkHealth, genId };
 })();

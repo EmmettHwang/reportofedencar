@@ -1,0 +1,17 @@
+{
+  "name": "eden-car-logbook",
+  "version": "1.5.0",
+  "description": "(주)이든푸드 업무용 차량 운행기록부",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "exceljs": "^4.4.0",
+    "express": "^4.18.3",
+    "mysql2": "^3.9.7",
+    "xlsx-style": "^0.8.13"
+  }
+}
